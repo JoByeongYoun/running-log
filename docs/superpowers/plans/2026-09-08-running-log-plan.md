@@ -779,3 +779,13 @@ revoke all on function app.set_fake_now from public, anon, authenticated;
 | 12 배포·예약 | 22, 26 |
 | 13 산출물 | 26 |
 | 14 인수 테스트 | 각 태스크 테스트 + 25 |
+
+## 실행 결과 및 계획 대비 편차 (2026-09-08)
+
+- 마이그레이션 번호: 주차 엔진을 대시보드보다 먼저 두어 `0005_weeks.sql`, `0006_dashboard.sql`, `0007_notifications_summary.sql`로 확정. `ensure_group_week`는 0003에서 정의.
+- 서비스 워커: `@serwist/next` v9는 Turbopack 빌드와 별도 패키지가 필요해 사용하지 않고, `src/app/sw.js/route.ts`가 버전 문자열을 주입해 제공하는 수동 SW로 대체. 정책(정적 자산만 캐시, 오프라인 fallback, 수동 업데이트)은 동일.
+- 시각 고정: PostgREST 연결 풀 때문에 세션 설정 대신 `app.test_clock` 테이블(로컬 seed만 `test_mode=true`)을 사용.
+- 관리자 위임: 부분 유니크 인덱스는 문 단위로 지연되지 않아 두 UPDATE(강등 → 승격)를 한 트랜잭션에서 실행.
+- 승인 마감: 주차 state와 무관하게 `now >= 월요일 12:00`이면 `review_closed` (cron 미실행 상태에서도 정책 유지).
+- 로컬 환경: Docker는 Colima로 설치·실행.
+- 미검증 항목: 실제 iOS/Android 기기 설치·카메라 HEIC 입력, Vercel/클라우드 Supabase 배포(계정·키 필요), 클라우드 SMTP.

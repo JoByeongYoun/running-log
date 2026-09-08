@@ -1,0 +1,40 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 26, cache: npm }
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run test:unit
+      - run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-placeholder
+          NEXT_PUBLIC_SITE_URL: http://localhost:3000
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 26, cache: npm }
+      - uses: supabase/setup-cli@v1
+        with: { version: latest }
+      - run: npm ci
+      - run: supabase start
+      - name: Write env
+        run: |
+          supabase status -o env | sed -n 's/^API_URL=/NEXT_PUBLIC_SUPABASE_URL=/p; s/^PUBLISHABLE_KEY=/NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=/p; s/^SECRET_KEY=/SUPABASE_SECRET_KEY=/p' > .env.local
+          echo "NEXT_PUBLIC_SITE_URL=http://localhost:3000" >> .env.local
+          echo "CRON_SECRET=ci-secret" >> .env.local
+      - run: npm run test:integration
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+        env: { CI: true }
