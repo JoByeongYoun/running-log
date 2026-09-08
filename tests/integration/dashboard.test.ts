@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { adminClient, createTestUser, completeProfile, resetAll, setFakeNow, expectRpcError } from '@/test/supabase-test';
+import { adminClient, createTestUser, completeProfile, resetAll, setFakeNow, expectRpcError, type TestUser } from '@/test/supabase-test';
 import { uploadEvidence, submit } from '@/test/records-helpers';
 
 async function member(label: string) { const u = await createTestUser(label); await completeProfile(u, label); return u; }

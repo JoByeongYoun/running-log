@@ -5,7 +5,7 @@ import { uploadEvidence, submit } from '@/test/records-helpers';
 async function member(label: string) { const u = await createTestUser(label); await completeProfile(u, label); return u; }
 
 describe('records: upload, submit, edit, review, comments', () => {
-  const admin = adminClient();
+  const admin = adminClient(); void admin;
   let owner: TestUser, m1: TestUser, m2: TestUser, groupId: string;
 
   beforeAll(async () => {
@@ -13,7 +13,7 @@ describe('records: upload, submit, edit, review, comments', () => {
     await setFakeNow('2026-09-09T03:00:00Z'); // Wed 12:00 KST
     owner = await member('owner');
     const g = (await owner.client.rpc('create_group', { p_name: '기록그룹', p_target_meters: 10000, p_penalty: '없음' })).data![0];
-    groupId = g.group_id;
+    groupId = g.group_id; void groupId;
     m1 = await member('m1'); m2 = await member('m2');
     for (const u of [m1, m2]) {
       const r = (await u.client.rpc('request_join', { p_code: g.invite_code })).data as string;

@@ -36,7 +36,15 @@ export async function signIn(_prev: ActionState, formData: FormData): Promise<Ac
     if (error.message.toLowerCase().includes('not confirmed')) return { error: '이메일 인증이 필요합니다. 메일함을 확인하세요.' };
     return { error: '이메일 또는 비밀번호가 올바르지 않습니다.' };
   }
-  redirect(safeReturnTo(parsed.data.returnTo));
+  const returnTo = safeReturnTo(parsed.data.returnTo);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) {
+    const { data: profile } = await supabase.from('profiles').select('onboarding_completed_at').eq('id', user.id).maybeSingle();
+    if (!profile?.onboarding_completed_at) {
+      redirect(returnTo === '/' ? '/onboarding' : `/onboarding?returnTo=${encodeURIComponent(returnTo)}`);
+    }
+  }
+  redirect(returnTo);
 }
 
 export async function signOut(): Promise<void> {

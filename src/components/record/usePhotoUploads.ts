@@ -27,6 +27,7 @@ export function usePhotoUploads(initial: PhotoItem[] = []) {
       if (ready.error) throw new Error(ready.error);
       patch(item.localId, { status: 'ready', uploadId: slot.slot.uploadId });
     } catch (e) {
+      console.error('evidence upload failed', e);
       const msg = e instanceof Error ? e.message : '';
       patch(item.localId, {
         status: 'error',

@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { ToastProvider } from '@/components/ui/Toast';
+import { ServiceWorker } from '@/components/pwa/ServiceWorker';
+import { InstallPrompt } from '@/components/pwa/InstallPrompt';
 
 export const metadata: Metadata = {
   title: { default: '우리들의 러닝일지', template: '%s · 러닝일지' },
@@ -21,7 +23,11 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
     <html lang="ko-KR">
       <body className="min-h-dvh bg-white text-slate-900">
-        <ToastProvider>{children}</ToastProvider>
+        <ToastProvider>
+          {children}
+          <ServiceWorker />
+          <InstallPrompt />
+        </ToastProvider>
       </body>
     </html>
   );

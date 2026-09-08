@@ -25,6 +25,7 @@ export function AvatarPicker({ userId, initialUrl, name, onUploaded }: Props) {
       setPreview(URL.createObjectURL(processed.blob));
       onUploaded(path);
     } catch (e) {
+      console.error('avatar upload failed', e);
       setError(e instanceof Error && e.message === 'unsupported_image' ? 'JPEG, PNG, WebP, HEIC 이미지만 올릴 수 있습니다.' : '사진 업로드에 실패했습니다. 다시 시도하세요.');
     } finally {
       setBusy(false);
