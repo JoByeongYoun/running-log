@@ -704,6 +704,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_comment: {
+        Args: { p_body: string; p_record_id: string }
+        Returns: string
+      }
       app_now: { Args: never; Returns: string }
       app_week_close_deadline: { Args: { p: string }; Returns: string }
       app_week_start_of: { Args: { p: string }; Returns: string }
@@ -711,6 +715,7 @@ export type Database = {
         Args: { p_request_id: string }
         Returns: undefined
       }
+      cleanup_expired_uploads: { Args: never; Returns: string[] }
       create_group: {
         Args: { p_name: string; p_penalty: string; p_target_meters: number }
         Returns: {
@@ -718,6 +723,15 @@ export type Database = {
           invite_code: string
         }[]
       }
+      create_upload_slot: {
+        Args: { p_byte_size: number; p_content_type: string }
+        Returns: {
+          storage_path: string
+          upload_id: string
+        }[]
+      }
+      delete_comment: { Args: { p_comment_id: string }; Returns: undefined }
+      delete_record: { Args: { p_record_id: string }; Returns: string[] }
       get_my_group_state: { Args: never; Returns: Json }
       leave_group: { Args: never; Returns: undefined }
       lookup_invite: {
@@ -730,6 +744,7 @@ export type Database = {
           target_meters: number
         }[]
       }
+      mark_upload_ready: { Args: { p_upload_id: string }; Returns: undefined }
       regenerate_invite_code: { Args: { p_group_id: string }; Returns: string }
       rename_group: {
         Args: { p_group_id: string; p_name: string }
@@ -740,15 +755,45 @@ export type Database = {
         Args: { p_approve: boolean; p_request_id: string }
         Returns: undefined
       }
+      review_record: {
+        Args: {
+          p_action: string
+          p_expected_version: number
+          p_reason: string
+          p_record_id: string
+        }
+        Returns: undefined
+      }
       schedule_group_settings: {
         Args: { p_group_id: string; p_penalty: string; p_target_meters: number }
         Returns: string
       }
       set_fake_now: { Args: { p: string }; Returns: undefined }
+      submit_record: {
+        Args: {
+          p_client_date?: string
+          p_distance_meters: number
+          p_memo: string
+          p_submission_key: string
+          p_upload_ids: string[]
+        }
+        Returns: string
+      }
       test_reset: { Args: never; Returns: undefined }
       transfer_admin: {
         Args: { p_group_id: string; p_to_user_id: string }
         Returns: undefined
+      }
+      update_record: {
+        Args: {
+          p_distance_meters: number
+          p_expected_version: number
+          p_keep_photo_ids: string[]
+          p_memo: string
+          p_record_id: string
+          p_upload_ids: string[]
+        }
+        Returns: string[]
       }
     }
     Enums: {
