@@ -1,0 +1,15 @@
+export const MAX_RECORD_METERS = 500_000;
+export const MAX_TARGET_METERS = 1_000_000;
+export const MAX_PHOTOS = 5;
+export const MIN_PHOTOS = 1;
+export const MAX_FILE_BYTES = 10_485_760;
+export const NICKNAME_MIN = 2;
+export const NICKNAME_MAX = 20;
+export const GROUP_NAME_MIN = 2;
+export const GROUP_NAME_MAX = 30;
+export const PENALTY_MIN = 1;
+export const PENALTY_MAX = 500;
+export const MEMO_MAX = 1000;
+export const COMMENT_MAX = 1000;
+export const SIGNED_URL_TTL_SECONDS = 60;
+export const TZ = 'Asia/Seoul';
