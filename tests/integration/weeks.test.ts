@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { adminClient, createTestUser, completeProfile, resetAll, setFakeNow, expectRpcError, type TestUser } from '@/test/supabase-test';
+import { adminClient, createTestUser, completeProfile, resetAll, setFakeNow, expectRpcError } from '@/test/supabase-test';
 import { uploadEvidence, submit } from '@/test/records-helpers';
 
 async function member(label: string) { const u = await createTestUser(label); await completeProfile(u, label); return u; }
@@ -20,7 +20,7 @@ async function setupGroup(admin = adminClient()) {
 }
 
 describe('weekly closing and finalization', () => {
-  const admin = adminClient();
+  const admin = adminClient(); void admin;
   let ctx: Awaited<ReturnType<typeof setupGroup>>;
   let recA: string, recB: string;
   beforeAll(async () => { await resetAll(); ctx = await setupGroup(admin); });

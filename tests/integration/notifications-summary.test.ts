@@ -5,7 +5,7 @@ import { uploadEvidence, submit } from '@/test/records-helpers';
 async function member(label: string) { const u = await createTestUser(label); await completeProfile(u, label); return u; }
 
 describe('notifications and weekly summary', () => {
-  const admin = adminClient();
+  const admin = adminClient(); void admin;
   let owner: TestUser, m1: TestUser, m2: TestUser, groupId: string, code: string;
 
   beforeAll(async () => {
@@ -74,6 +74,7 @@ describe('notifications and weekly summary', () => {
     expect((await newbie.client.rpc('claim_summary_auto_show')).data).toBeNull();
     // manual summary stays available
     expect((await m1.client.rpc('get_week_summary', { p_group_id: groupId, p_week_start: '2026-09-07' })).error).toBeNull();
+    void groupId;
     // several weeks later only the immediately previous week is claimed
     await setFakeNow('2026-10-05T04:00:00Z');
     const later = (await m1.client.rpc('claim_summary_auto_show')).data as { week: { weekStart: string } };
