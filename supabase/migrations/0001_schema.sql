@@ -159,7 +159,7 @@ create table public.join_requests (
   group_id uuid not null references public.groups (id) on delete cascade,
   user_id uuid not null references public.profiles (id) on delete cascade,
   status public.join_status not null default 'pending',
-  reviewed_by uuid references public.profiles (id),
+  reviewed_by uuid references public.profiles (id) on delete set null,
   reviewed_at timestamptz,
   created_at timestamptz not null default now()
 );
@@ -234,7 +234,7 @@ create index pending_uploads_user_idx on public.pending_uploads (user_id);
 create table public.record_reviews (
   id uuid primary key default gen_random_uuid(),
   record_id uuid not null references public.running_records (id) on delete cascade,
-  actor_id uuid references public.profiles (id),
+  actor_id uuid references public.profiles (id) on delete set null,
   from_status public.record_status,
   to_status public.record_status not null,
   reason text,
@@ -249,7 +249,7 @@ create table public.comments (
   body text not null check (char_length(body) <= 1000),
   created_at timestamptz not null default now(),
   deleted_at timestamptz,
-  deleted_by uuid references public.profiles (id)
+  deleted_by uuid references public.profiles (id) on delete set null
 );
 create index comments_record_idx on public.comments (record_id, created_at);
 
@@ -315,8 +315,9 @@ create or replace function app.test_reset() returns void
 language plpgsql security definer set search_path = public, app as $$
 begin
   if not app.is_test_env() then raise exception 'test_reset disabled'; end if;
-  delete from auth.users where true;
   truncate public.groups cascade;
+  truncate public.profiles cascade;
+  delete from auth.users where true;
   truncate app.rate_limits, app.maintenance_runs;
   update app.test_clock set fake_now = null where id;
 end $$;

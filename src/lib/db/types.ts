@@ -707,8 +707,49 @@ export type Database = {
       app_now: { Args: never; Returns: string }
       app_week_close_deadline: { Args: { p: string }; Returns: string }
       app_week_start_of: { Args: { p: string }; Returns: string }
+      cancel_join_request: {
+        Args: { p_request_id: string }
+        Returns: undefined
+      }
+      create_group: {
+        Args: { p_name: string; p_penalty: string; p_target_meters: number }
+        Returns: {
+          group_id: string
+          invite_code: string
+        }[]
+      }
+      get_my_group_state: { Args: never; Returns: Json }
+      leave_group: { Args: never; Returns: undefined }
+      lookup_invite: {
+        Args: { p_code: string }
+        Returns: {
+          archived: boolean
+          group_id: string
+          name: string
+          penalty: string
+          target_meters: number
+        }[]
+      }
+      regenerate_invite_code: { Args: { p_group_id: string }; Returns: string }
+      rename_group: {
+        Args: { p_group_id: string; p_name: string }
+        Returns: undefined
+      }
+      request_join: { Args: { p_code: string }; Returns: string }
+      review_join_request: {
+        Args: { p_approve: boolean; p_request_id: string }
+        Returns: undefined
+      }
+      schedule_group_settings: {
+        Args: { p_group_id: string; p_penalty: string; p_target_meters: number }
+        Returns: string
+      }
       set_fake_now: { Args: { p: string }; Returns: undefined }
       test_reset: { Args: never; Returns: undefined }
+      transfer_admin: {
+        Args: { p_group_id: string; p_to_user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       join_status: "pending" | "approved" | "rejected" | "cancelled"
