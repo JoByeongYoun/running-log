@@ -34,7 +34,22 @@ async function record(u: Awaited<ReturnType<typeof user>>, km: number) {
   return data as string;
 }
 
+const DEMO_EMAILS = ['demo-admin@local.test', 'demo-1@local.test', 'demo-2@local.test', 'demo-3@local.test'];
+
+/** 이전 데모 사용자 삭제 (그룹·기록은 FK cascade로 정리, 마지막 멤버 탈퇴 시 그룹 보관 대신 삭제됨) */
+async function cleanup() {
+  const { data } = await admin.auth.admin.listUsers({ perPage: 1000 });
+  for (const u of data?.users ?? []) {
+    if (u.email && DEMO_EMAILS.includes(u.email)) {
+      const { data: gs } = await admin.from('memberships').select('group_id').eq('user_id', u.id);
+      for (const g of gs ?? []) await admin.from('groups').delete().eq('id', g.group_id);
+      await admin.auth.admin.deleteUser(u.id);
+    }
+  }
+}
+
 async function main() {
+  await cleanup();
   const owner = await user('demo-admin@local.test', '러닝반장', { r: 52, g: 211, b: 153 });
   const { data: g } = await owner.client.rpc('create_group', { p_name: '데모 러닝 크루', p_target_meters: 15000, p_penalty: '다음 모임 커피 쏘기' });
   const code = g![0].invite_code;
