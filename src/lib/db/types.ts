@@ -715,6 +715,7 @@ export type Database = {
         Args: { p_request_id: string }
         Returns: undefined
       }
+      claim_summary_auto_show: { Args: never; Returns: Json }
       cleanup_expired_uploads: { Args: never; Returns: string[] }
       create_group: {
         Args: { p_name: string; p_penalty: string; p_target_meters: number }
@@ -734,7 +735,13 @@ export type Database = {
       delete_record: { Args: { p_record_id: string }; Returns: string[] }
       get_available_weeks: { Args: { p_group_id: string }; Returns: string[] }
       get_my_group_state: { Args: never; Returns: Json }
+      get_notifications: { Args: { p_limit?: number }; Returns: Json }
+      get_unread_count: { Args: never; Returns: number }
       get_week_dashboard: {
+        Args: { p_group_id: string; p_week_start: string }
+        Returns: Json
+      }
+      get_week_summary: {
         Args: { p_group_id: string; p_week_start: string }
         Returns: Json
       }
@@ -749,6 +756,7 @@ export type Database = {
           target_meters: number
         }[]
       }
+      mark_notifications_read: { Args: { p_ids: string[] }; Returns: undefined }
       mark_upload_ready: { Args: { p_upload_id: string }; Returns: undefined }
       regenerate_invite_code: { Args: { p_group_id: string }; Returns: string }
       rename_group: {
