@@ -732,7 +732,12 @@ export type Database = {
       }
       delete_comment: { Args: { p_comment_id: string }; Returns: undefined }
       delete_record: { Args: { p_record_id: string }; Returns: string[] }
+      get_available_weeks: { Args: { p_group_id: string }; Returns: string[] }
       get_my_group_state: { Args: never; Returns: Json }
+      get_week_dashboard: {
+        Args: { p_group_id: string; p_week_start: string }
+        Returns: Json
+      }
       leave_group: { Args: never; Returns: undefined }
       lookup_invite: {
         Args: { p_code: string }
@@ -764,6 +769,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      run_week_maintenance: { Args: never; Returns: Json }
       schedule_group_settings: {
         Args: { p_group_id: string; p_penalty: string; p_target_meters: number }
         Returns: string

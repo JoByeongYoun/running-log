@@ -194,7 +194,7 @@ begin
   if not app.is_group_admin(r.group_id) then perform app.fail('forbidden'); end if;
   select * into w from public.group_weeks where id = r.week_id for update;
   if w.state = 'finalized' then perform app.fail('week_finalized'); end if;
-  if w.state = 'closing' and app.now() >= app.week_close_deadline(w.week_start) then perform app.fail('review_closed'); end if;
+  if app.now() >= app.week_close_deadline(w.week_start) then perform app.fail('review_closed'); end if;
   if r.version <> p_expected_version then perform app.fail('stale_version'); end if;
 
   if p_action = 'approve' then

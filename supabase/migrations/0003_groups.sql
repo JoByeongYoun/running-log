@@ -246,11 +246,11 @@ begin
   if not exists (select 1 from public.memberships where group_id = p_group_id and left_at is null and user_id = p_to_user_id) then
     perform app.fail('not_member');
   end if;
-  update public.memberships
-    set role = case when user_id = p_to_user_id then 'admin'::public.membership_role else 'member'::public.membership_role end
-  where group_id = p_group_id and left_at is null and user_id in (uid, p_to_user_id);
+  -- two statements inside one transaction: demote first so the partial unique index never sees two admins
+  update public.memberships set role = 'member' where group_id = p_group_id and left_at is null and user_id = uid;
+  update public.memberships set role = 'admin' where group_id = p_group_id and left_at is null and user_id = p_to_user_id;
   get diagnostics n = row_count;
-  if n <> 2 then perform app.fail('invalid_status'); end if;
+  if n <> 1 then perform app.fail('invalid_status'); end if;
 end $$;
 
 create or replace function public.leave_group() returns void
