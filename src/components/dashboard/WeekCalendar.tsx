@@ -28,7 +28,7 @@ export function WeekCalendar({ data, myId }: { data: WeekDashboard; myId: string
           <thead>
             <tr className="text-slate-500">
               <th scope="col" className="sticky left-0 z-10 w-28 bg-white text-left font-normal">멤버</th>
-              <th scope="col" className="sticky left-28 z-10 w-16 bg-white pr-2 text-right font-normal">승인 합계</th>
+              <th scope="col" className="sticky left-28 z-10 w-12 bg-white pr-1 text-right font-normal">합계</th>
               {DOW.map((d, i) => <th key={d} scope="col" className={`font-normal ${i >= 5 ? 'text-red-400' : ''}`}>{d}</th>)}
             </tr>
           </thead>
@@ -36,10 +36,11 @@ export function WeekCalendar({ data, myId }: { data: WeekDashboard; myId: string
             {data.members.map((m) => (
               <tr key={m.userId} className={m.userId === myId ? 'bg-emerald-50' : ''}>
                 <th scope="row" className={`sticky left-0 z-10 rounded-l-lg py-1 pr-1 text-left font-normal ${m.userId === myId ? 'bg-emerald-50' : 'bg-white'}`}>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1">
+                    <span className="w-4 shrink-0 text-right text-[11px] font-semibold text-slate-500">{m.rank ?? '-'}</span>
                     <Avatar src={m.avatarUrl ?? null} name={m.nickname} size={24} />
                     <div className="min-w-0">
-                      <p className="truncate font-medium">{m.rank ? <span className="mr-1 text-slate-500">{m.rank}위</span> : null}{m.nickname}</p>
+                      <p className="truncate font-medium">{m.nickname}</p>
                       <p className="truncate text-[10px] text-slate-500">
                         {m.joinedThisWeek ? '준비 주간' : OUTCOME_LABEL[m.outcome]}
                         {(m.leftDuringWeek || !m.activeNow) && ' · 탈퇴'}
@@ -47,9 +48,9 @@ export function WeekCalendar({ data, myId }: { data: WeekDashboard; myId: string
                     </div>
                   </div>
                 </th>
-                <td className={`sticky left-28 z-10 pr-2 text-right font-semibold ${m.userId === myId ? 'bg-emerald-50' : 'bg-white'}`}>
+                <td className={`sticky left-28 z-10 pr-1 text-right font-semibold ${m.userId === myId ? 'bg-emerald-50' : 'bg-white'}`}>
                   {formatMeters(m.approvedMeters)}
-                  {m.pendingMeters > 0 && <span className="block text-[10px] font-normal text-amber-600">+{formatMeters(m.pendingMeters)} 대기</span>}
+                  {m.pendingMeters > 0 && <span className="block text-[10px] font-normal text-amber-600" title="승인 대기">+{formatMeters(m.pendingMeters)}</span>}
                 </td>
                 {m.days.map((d) => {
                   const has = d.records.length > 0;
