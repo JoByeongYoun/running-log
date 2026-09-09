@@ -9,7 +9,7 @@
 
 | 위치 | 역할 |
 |---|---|
-| `supabase/migrations/0001~0007` | 스키마·RLS·그룹/기록/주차/알림 함수. 모든 상태 변경은 `security definer` 함수 안에서 잠금·단일 트랜잭션으로 처리 |
+| `supabase/migrations/0001~0008` | 스키마·RLS·그룹/기록/주차/알림 함수. 모든 상태 변경은 `security definer` 함수 안에서 잠금·단일 트랜잭션으로 처리 |
 | `src/lib/domain` | 주차·거리·순위 순수 로직 (`Asia/Seoul` 고정) |
 | `src/actions` | Server Actions: 입력 검증(zod) → `rpc` |
 | `src/app` | 화면 (`/`, `/admin`, `/records/[id]`, `/notifications`, `/profile`, `/join/[code]`, `/groups/new`, `/onboarding`, 인증) |

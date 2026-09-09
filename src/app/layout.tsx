@@ -3,6 +3,7 @@ import './globals.css';
 import { ToastProvider } from '@/components/ui/Toast';
 import { ServiceWorker } from '@/components/pwa/ServiceWorker';
 import { InstallPrompt } from '@/components/pwa/InstallPrompt';
+import { LiveRefresh } from '@/components/live/LiveRefresh';
 
 const SITE_NAME = 'Running Log';
 const DESCRIPTION = '함께 달리고, 함께 기록해요. 그룹 주간 목표 러닝 기록 앱';
@@ -53,6 +54,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
           {children}
           <ServiceWorker />
           <InstallPrompt />
+          <LiveRefresh />
         </ToastProvider>
       </body>
     </html>
