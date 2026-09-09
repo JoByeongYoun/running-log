@@ -10,7 +10,6 @@ import { WeekNav } from '@/components/dashboard/WeekNav';
 import { MyProgress } from '@/components/dashboard/MyProgress';
 import { WeekCalendar } from '@/components/dashboard/WeekCalendar';
 import { ScrollRestore } from '@/components/dashboard/ScrollRestore';
-import { TodayButton } from '@/components/dashboard/TodayButton';
 import { RecordForm } from '@/components/record/RecordForm';
 import { SummaryAutoShow } from '@/components/summary/SummaryAutoShow';
 import { SummaryButton } from '@/components/summary/SummaryButton';
@@ -76,7 +75,6 @@ export default async function HomePage({ searchParams }: PageProps<'/'>) {
               )}
               <div className="flex gap-2">
                 {!dash.data.week.isCurrent && <SummaryButton groupId={groupId} weekStart={weekStart} />}
-                {!state.membership.archived && <TodayButton isCurrent={dash.data.week.isCurrent} />}
               </div>
             </div>
             <MyProgress data={dash.data} />
