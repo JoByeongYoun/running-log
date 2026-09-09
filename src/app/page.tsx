@@ -21,8 +21,7 @@ export default async function HomePage({ searchParams }: PageProps<'/'>) {
   const session = await getSessionUser();
   if (!session) redirect('/login');
   const supabase = session.supabase;
-  const state = await getGroupState(supabase);
-  const { data: unread } = await supabase.rpc('get_unread_count');
+  const [state, { data: unread }] = await Promise.all([getGroupState(supabase), supabase.rpc('get_unread_count')]);
 
   if (!state.membership) {
     return (

@@ -19,7 +19,9 @@ export async function updateSession(request: NextRequest) {
       },
     },
   );
-  const { data: { user } } = await supabase.auth.getUser();
+  // getClaims()는 JWKS(ES256)로 토큰을 로컬 검증한다. Auth 서버 왕복(getUser)보다 훨씬 빠르다.
+  const { data: claims } = await supabase.auth.getClaims();
+  const user = claims?.claims.sub ? { id: claims.claims.sub } : null;
   let onboarded: boolean | null = null;
   if (user) {
     const { data } = await supabase.from('profiles').select('onboarding_completed_at').eq('id', user.id).maybeSingle();

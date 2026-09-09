@@ -27,8 +27,10 @@ export async function createServerSupabase() {
 /** 로그인 사용자와 프로필. 미로그인 시 null. */
 export async function getSessionUser() {
   const supabase = await createServerSupabase();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
+  // 로컬 JWT 검증(JWKS 캐시). 세션 갱신은 proxy가 담당하므로 여기서는 Auth 서버 왕복을 피한다.
+  const { data: claims } = await supabase.auth.getClaims();
+  if (!claims?.claims.sub) return null;
+  const user = { id: claims.claims.sub, email: claims.claims.email as string | undefined };
   const { data: profile } = await supabase
     .from('profiles')
     .select('id, nickname, avatar_path, onboarding_completed_at')
