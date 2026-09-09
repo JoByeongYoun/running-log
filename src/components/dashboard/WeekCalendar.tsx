@@ -4,12 +4,14 @@ import Link from 'next/link';
 import { formatMeters } from '@/lib/domain/distance';
 import { Avatar } from '@/components/ui/Avatar';
 import { Modal } from '@/components/ui/Modal';
+import { MemberModal } from './MemberModal';
 import { OUTCOME_LABEL, STATUS_LABEL, type DayCell, type MemberRow, type WeekDashboard } from '@/lib/dashboard/types';
 
 const DOW = ['월', '화', '수', '목', '금', '토', '일'];
 
 export function WeekCalendar({ data, myId }: { data: WeekDashboard; myId: string }) {
   const [open, setOpen] = useState<{ member: MemberRow; day: DayCell } | null>(null);
+  const [profile, setProfile] = useState<MemberRow | null>(null);
   const backParam = `?week=${data.week.weekStart}&from=home`;
 
   function openCell(member: MemberRow, day: DayCell, href: (id: string) => string, go: (href: string) => void) {
@@ -36,7 +38,7 @@ export function WeekCalendar({ data, myId }: { data: WeekDashboard; myId: string
             {data.members.map((m) => (
               <tr key={m.userId} className={m.userId === myId ? 'bg-emerald-50' : ''}>
                 <th scope="row" className={`sticky left-0 z-10 rounded-l-lg py-1 pr-1 text-left font-normal ${m.userId === myId ? 'bg-emerald-50' : 'bg-white'}`}>
-                  <div className="flex items-center gap-1">
+                  <button type="button" onClick={() => setProfile(m)} aria-label={`${m.nickname} 이번 주 기록 보기`} className="-ml-1 flex w-full items-center gap-1 rounded-lg py-0.5 pl-1 text-left hover:bg-slate-100">
                     <span className="w-4 shrink-0 text-right text-[11px] font-semibold text-slate-500">{m.rank ?? '-'}</span>
                     <Avatar src={m.avatarUrl ?? null} name={m.nickname} size={24} />
                     <div className="min-w-0">
@@ -46,7 +48,7 @@ export function WeekCalendar({ data, myId }: { data: WeekDashboard; myId: string
                         {(m.leftDuringWeek || !m.activeNow) && ' · 탈퇴'}
                       </p>
                     </div>
-                  </div>
+                  </button>
                 </th>
                 <td className={`sticky left-28 z-10 pr-1 text-right font-semibold ${m.userId === myId ? 'bg-emerald-50' : 'bg-white'}`}>
                   {formatMeters(m.approvedMeters)}
@@ -81,6 +83,7 @@ export function WeekCalendar({ data, myId }: { data: WeekDashboard; myId: string
         </table>
       </div>
       {data.members.length === 0 && <p className="py-4 text-center text-sm text-slate-500">이 주에는 멤버가 없습니다.</p>}
+      <MemberModal member={profile} data={data} isMe={profile?.userId === myId} onClose={() => setProfile(null)} />
       <Modal open={Boolean(open)} onClose={() => setOpen(null)} title={open ? `${open.member.nickname} · ${open.day.date}` : ''}>
         <ul className="divide-y divide-slate-200">
           {open?.day.records.map((r, i) => (
