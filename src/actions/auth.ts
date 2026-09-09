@@ -17,11 +17,15 @@ export async function signUp(_prev: ActionState, formData: FormData): Promise<Ac
   if (!parsed.success) return { error: firstIssue(parsed.error) };
   const returnTo = safeReturnTo(parsed.data.returnTo);
   const supabase = await createServerSupabase();
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
     options: { emailRedirectTo: `${siteUrl()}/auth/callback?returnTo=${encodeURIComponent(returnTo)}` },
   });
+  if (!error && data.session) {
+    // 이메일 확인이 꺼진 프로젝트: 가입 즉시 로그인되므로 바로 온보딩으로
+    redirect(returnTo === '/' ? '/onboarding' : `/onboarding?returnTo=${encodeURIComponent(returnTo)}`);
+  }
   if (error) {
     const m = error.message.toLowerCase();
     if (m.includes('already') || m.includes('exists')) return { error: '이미 가입된 이메일입니다.' };

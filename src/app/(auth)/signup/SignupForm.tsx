@@ -14,7 +14,7 @@ export function SignupForm({ returnTo }: { returnTo: string }) {
       <Input label="이메일" name="email" type="email" autoComplete="email" required inputMode="email" />
       <Input label="비밀번호" name="password" type="password" autoComplete="new-password" required minLength={8} hint="8자 이상" />
       <FormMessage error={state.error} />
-      <SubmitButton full>가입하고 인증 메일 받기</SubmitButton>
+      <SubmitButton full>가입하기</SubmitButton>
     </form>
   );
 }
