@@ -27,15 +27,15 @@ export function WeekCalendar({ data, myId }: { data: WeekDashboard; myId: string
         <table className="w-full min-w-[520px] border-separate border-spacing-y-1 text-xs">
           <thead>
             <tr className="text-slate-500">
-              <th scope="col" className="w-28 text-left font-normal">멤버</th>
-              {DOW.map((d, i) => <th key={d} scope="col" className={`font-normal ${i >= 5 ? 'text-red-400' : ''}`}>{d}</th>)}
+              <th scope="col" className="sticky left-0 z-10 w-28 bg-white text-left font-normal">멤버</th>
               <th scope="col" className="text-right font-normal">승인 합계</th>
+              {DOW.map((d, i) => <th key={d} scope="col" className={`font-normal ${i >= 5 ? 'text-red-400' : ''}`}>{d}</th>)}
             </tr>
           </thead>
           <tbody>
             {data.members.map((m) => (
               <tr key={m.userId} className={m.userId === myId ? 'bg-emerald-50' : ''}>
-                <th scope="row" className="rounded-l-lg py-1 pr-1 text-left font-normal">
+                <th scope="row" className={`sticky left-0 z-10 rounded-l-lg py-1 pr-1 text-left font-normal ${m.userId === myId ? 'bg-emerald-50' : 'bg-white'}`}>
                   <div className="flex items-center gap-1.5">
                     <Avatar src={m.avatarUrl ?? null} name={m.nickname} size={24} />
                     <div className="min-w-0">
@@ -47,6 +47,10 @@ export function WeekCalendar({ data, myId }: { data: WeekDashboard; myId: string
                     </div>
                   </div>
                 </th>
+                <td className="pr-2 text-right font-semibold">
+                  {formatMeters(m.approvedMeters)}
+                  {m.pendingMeters > 0 && <span className="block text-[10px] font-normal text-amber-600">+{formatMeters(m.pendingMeters)} 대기</span>}
+                </td>
                 {m.days.map((d) => {
                   const has = d.records.length > 0;
                   const single = d.records.length === 1 ? d.records[0] : null;
@@ -59,7 +63,7 @@ export function WeekCalendar({ data, myId }: { data: WeekDashboard; myId: string
                     </>
                   );
                   return (
-                    <td key={d.date} className="text-center align-top">
+                    <td key={d.date} className="text-center align-top last:rounded-r-lg">
                       {single ? (
                         <Link href={`/records/${single.id}${backParam}`} className="block min-h-9 rounded-lg px-0.5 py-1 hover:bg-slate-100" aria-label={`${m.nickname} ${d.date} 기록`}>{inner}</Link>
                       ) : has ? (
@@ -70,10 +74,6 @@ export function WeekCalendar({ data, myId }: { data: WeekDashboard; myId: string
                     </td>
                   );
                 })}
-                <td className="rounded-r-lg text-right font-semibold">
-                  {formatMeters(m.approvedMeters)}
-                  {m.pendingMeters > 0 && <span className="block text-[10px] font-normal text-amber-600">+{formatMeters(m.pendingMeters)} 대기</span>}
-                </td>
               </tr>
             ))}
           </tbody>
