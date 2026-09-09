@@ -1,10 +1,10 @@
 'use client';
 import { useEffect, useRef } from 'react';
 
-type Props = { photos: { id: string; url: string }[]; index: number | null; onChange: (index: number | null) => void };
+type Props = { photos: { id: string; url: string }[]; index: number | null; onChange: (index: number | null) => void; label?: string };
 
 /** Full-screen photo viewer. Uses a native <dialog> so it stacks correctly above other modals. */
-export function PhotoLightbox({ photos, index, onChange }: Props) {
+export function PhotoLightbox({ photos, index, onChange, label = '증거 사진' }: Props) {
   const ref = useRef<HTMLDialogElement>(null);
   const open = index !== null && index >= 0 && index < photos.length;
 
@@ -41,12 +41,12 @@ export function PhotoLightbox({ photos, index, onChange }: Props) {
       {open && (
         <div className="flex h-full w-full flex-col">
           <div className="flex items-center justify-between p-3" onClick={(e) => e.stopPropagation()}>
-            <span className="text-sm">{idx + 1} / {photos.length}</span>
+            <span className="text-sm">{photos.length > 1 ? `${idx + 1} / ${photos.length}` : label}</span>
             <button type="button" aria-label="닫기" className="min-h-11 min-w-11 text-2xl" onClick={close}>×</button>
           </div>
           <div className="flex min-h-0 flex-1 items-center justify-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={photos[idx].url} alt={`증거 사진 ${idx + 1} 확대`} className="max-h-full max-w-full object-contain" onClick={(e) => e.stopPropagation()} />
+            <img src={photos[idx].url} alt={photos.length > 1 ? `${label} ${idx + 1} 확대` : `${label} 확대`} className="max-h-full max-w-full object-contain" onClick={(e) => e.stopPropagation()} />
           </div>
           {photos.length > 1 && (
             <div className="flex justify-between p-3" onClick={(e) => e.stopPropagation()}>
