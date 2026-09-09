@@ -24,11 +24,11 @@ export function WeekCalendar({ data, myId }: { data: WeekDashboard; myId: string
         {data.provisional && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">{data.week.state === 'closing' ? '집계 중' : '잠정'}</span>}
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[520px] border-separate border-spacing-y-1 text-xs">
+        <table className="w-full min-w-[520px] table-fixed border-separate border-spacing-y-1 text-xs">
           <thead>
             <tr className="text-slate-500">
               <th scope="col" className="sticky left-0 z-10 w-28 bg-white text-left font-normal">멤버</th>
-              <th scope="col" className="text-right font-normal">승인 합계</th>
+              <th scope="col" className="sticky left-28 z-10 w-16 bg-white pr-2 text-right font-normal">승인 합계</th>
               {DOW.map((d, i) => <th key={d} scope="col" className={`font-normal ${i >= 5 ? 'text-red-400' : ''}`}>{d}</th>)}
             </tr>
           </thead>
@@ -47,7 +47,7 @@ export function WeekCalendar({ data, myId }: { data: WeekDashboard; myId: string
                     </div>
                   </div>
                 </th>
-                <td className="pr-2 text-right font-semibold">
+                <td className={`sticky left-28 z-10 pr-2 text-right font-semibold ${m.userId === myId ? 'bg-emerald-50' : 'bg-white'}`}>
                   {formatMeters(m.approvedMeters)}
                   {m.pendingMeters > 0 && <span className="block text-[10px] font-normal text-amber-600">+{formatMeters(m.pendingMeters)} 대기</span>}
                 </td>
