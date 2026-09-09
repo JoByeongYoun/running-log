@@ -43,7 +43,7 @@ export function MemberModal({ member, data, isMe, onClose }: Props) {
           <div className="relative overflow-hidden bg-gradient-to-br from-emerald-600 via-emerald-700 to-slate-900 px-5 pb-6 pt-5 text-white">
             <div aria-hidden className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-white/10 blur-2xl" />
             <div aria-hidden className="pointer-events-none absolute -bottom-20 -left-10 h-40 w-40 rounded-full bg-emerald-300/20 blur-2xl" />
-            <button type="button" onClick={onClose} aria-label="닫기" className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-lg text-white/90 backdrop-blur hover:bg-white/20">×</button>
+            <button type="button" onClick={onClose} aria-label="닫기" className="absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-lg text-white/90 backdrop-blur hover:bg-white/20">×</button>
             <div className="relative flex items-center gap-4">
               <div className="relative shrink-0">
                 <div className="rounded-full bg-gradient-to-tr from-amber-300 via-white to-emerald-300 p-[3px] shadow-lg shadow-black/20">
