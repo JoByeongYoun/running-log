@@ -22,7 +22,12 @@ export async function signUp(_prev: ActionState, formData: FormData): Promise<Ac
     password: parsed.data.password,
     options: { emailRedirectTo: `${siteUrl()}/auth/callback?returnTo=${encodeURIComponent(returnTo)}` },
   });
-  if (error) return { error: error.message.includes('already') ? '이미 가입된 이메일입니다.' : '가입에 실패했습니다. 잠시 후 다시 시도하세요.' };
+  if (error) {
+    const m = error.message.toLowerCase();
+    if (m.includes('already') || m.includes('exists')) return { error: '이미 가입된 이메일입니다.' };
+    if (m.includes('rate limit')) return { error: '인증 메일 발송 한도를 초과했습니다. 약 1시간 뒤에 다시 시도하세요.' };
+    return { error: '가입에 실패했습니다. 잠시 후 다시 시도하세요.' };
+  }
   return { success: '확인 메일을 보냈습니다. 메일의 링크를 눌러 인증을 완료하세요.' };
 }
 
