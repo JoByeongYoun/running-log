@@ -49,3 +49,4 @@ supabase/.branches
 /test-results/
 /playwright-report/
 scratch/
+.idea/
