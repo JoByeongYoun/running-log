@@ -5,10 +5,10 @@ import { ServiceWorker } from '@/components/pwa/ServiceWorker';
 import { InstallPrompt } from '@/components/pwa/InstallPrompt';
 
 export const metadata: Metadata = {
-  title: { default: '우리들의 러닝일지', template: '%s · 러닝일지' },
+  title: { default: 'Running Log', template: '%s · Running Log' },
   description: '그룹 주간 목표 러닝 기록',
-  applicationName: '우리들의 러닝일지',
-  appleWebApp: { capable: true, statusBarStyle: 'default', title: '러닝일지' },
+  applicationName: 'Running Log',
+  appleWebApp: { capable: true, statusBarStyle: 'default', title: 'Running Log' },
   icons: { apple: '/icons/apple-touch-icon.png' },
 };
 

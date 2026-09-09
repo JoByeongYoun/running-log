@@ -13,7 +13,7 @@ test('signup → group → invite → record → approve → dashboard', async (
   const owner = await ownerCtx.newPage();
   await login(owner, ownerUser.email);
   await onboard(owner, '관리자');
-  await expect(owner.getByRole('heading', { name: '우리들의 러닝일지' })).toBeVisible();
+  await expect(owner.getByRole('heading', { name: 'Running Log' })).toBeVisible();
 
   // create group
   await owner.getByRole('button', { name: '그룹 만들기' }).click();
@@ -87,7 +87,7 @@ test('signup → group → invite → record → approve → dashboard', async (
 test('manifest and service worker are served; offline page renders', async ({ page }) => {
   const m = await page.request.get('/manifest.webmanifest');
   expect(m.ok()).toBeTruthy();
-  expect((await m.json()).name).toBe('우리들의 러닝일지');
+  expect((await m.json()).name).toBe('Running Log');
   const sw = await page.request.get('/sw.js');
   expect(sw.ok()).toBeTruthy();
   expect(sw.headers()['content-type']).toContain('javascript');

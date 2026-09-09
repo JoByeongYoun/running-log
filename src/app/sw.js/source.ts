@@ -1,5 +1,5 @@
 export const SW_SOURCE = String.raw`
-/* 우리들의 러닝일지 service worker
+/* Running Log service worker
  * - precache: offline page + icons
  * - runtime: /_next/static, /icons, fonts → cache-first
  * - everything else (HTML, RSC, API, Supabase, images) → network only

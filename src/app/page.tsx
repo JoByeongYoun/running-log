@@ -26,7 +26,7 @@ export default async function HomePage({ searchParams }: PageProps<'/'>) {
   if (!state.membership) {
     return (
       <>
-        <HomeHeader title="우리들의 러닝일지" admin={false} unread={unread ?? 0} pendingAdmin={0} />
+        <HomeHeader title="Running Log" admin={false} unread={unread ?? 0} pendingAdmin={0} />
         <main className="mx-auto w-full max-w-md px-4 py-6"><NoGroupHome state={state} /></main>
       </>
     );

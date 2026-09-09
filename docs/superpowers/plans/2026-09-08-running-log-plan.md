@@ -1,4 +1,4 @@
-# 우리들의 러닝일지 Implementation Plan
+# Running Log Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -8,7 +8,7 @@
 
 **Tech Stack:** Next.js 16.3 (App Router, TypeScript strict), React 19.2, Tailwind CSS 4, @supabase/supabase-js 2.116 + @supabase/ssr 0.12, Supabase CLI(로컬 Docker), Zod 4, Vitest 5, Playwright 1.63, @serwist/next 9.5 (서비스 워커), html-to-image (요약 PNG), heic-to (HEIC 변환).
 
-**Spec:** `plan.md` (우리들의 러닝일지 — 작업 기획서 v1.0, 2026-09-08). 이 계획의 모든 정책값은 spec 2절·7절·9절에서 그대로 가져온다.
+**Spec:** `plan.md` (Running Log — 작업 기획서 v1.0, 2026-09-08). 이 계획의 모든 정책값은 spec 2절·7절·9절에서 그대로 가져온다.
 
 ## Global Constraints
 
@@ -160,7 +160,7 @@ NEXT_PUBLIC_SITE_URL=
 `.nvmrc`: `26`
 `README.md`:
 ```markdown
-# 우리들의 러닝일지
+# Running Log
 
 그룹 주간 목표 러닝 기록 관리 PWA. 스펙은 `plan.md`.
 
@@ -738,7 +738,7 @@ revoke all on function app.set_fake_now from public, anon, authenticated;
 
 **Files:** `src/app/manifest.ts`, `public/icons/{icon-192,icon-512,maskable-512,apple-touch-icon}.png`(sharp 스크립트 `scripts/gen-icons.ts`로 SVG에서 생성), `src/app/sw.ts`, `next.config.ts`(serwist), `src/app/offline/page.tsx`, `src/components/pwa/{InstallPrompt,UpdateNotice}.tsx`, `src/app/layout.tsx`(apple-touch-icon, theme-color, viewport-fit=cover)
 
-**Interfaces:** manifest: name `우리들의 러닝일지`, short_name `러닝일지`, id/start_url/scope `/`, display standalone, lang ko-KR, theme_color/background_color `#0f172a`/`#ffffff`(globals.css와 일치). SW(serwist): precache 빌드 정적 자산만; 런타임 캐시는 `/_next/static`, `/icons`, 폰트만 CacheFirst; 그 외(`/`, `/api`, `/records`, supabase 도메인, `_rsc` 파라미터) NetworkOnly; navigation 실패 시 `/offline` fallback; `skipWaiting=false`, 새 SW 대기 시 `UpdateNotice`가 `새 버전이 있습니다` 배너와 `새로고침` 버튼 표시(작성 중 자동 새로고침 없음). InstallPrompt: `beforeinstallprompt` 캡처 시 설치 버튼; iOS Safari(`navigator.standalone===false` && iOS UA)는 공유→홈 화면에 추가 안내; `display-mode: standalone`이면 숨김; 닫으면 `localStorage['install-dismissed']=1`.
+**Interfaces:** manifest: name `Running Log`, short_name `Running Log`, id/start_url/scope `/`, display standalone, lang ko-KR, theme_color/background_color `#0f172a`/`#ffffff`(globals.css와 일치). SW(serwist): precache 빌드 정적 자산만; 런타임 캐시는 `/_next/static`, `/icons`, 폰트만 CacheFirst; 그 외(`/`, `/api`, `/records`, supabase 도메인, `_rsc` 파라미터) NetworkOnly; navigation 실패 시 `/offline` fallback; `skipWaiting=false`, 새 SW 대기 시 `UpdateNotice`가 `새 버전이 있습니다` 배너와 `새로고침` 버튼 표시(작성 중 자동 새로고침 없음). InstallPrompt: `beforeinstallprompt` 캡처 시 설치 버튼; iOS Safari(`navigator.standalone===false` && iOS UA)는 공유→홈 화면에 추가 안내; `display-mode: standalone`이면 숨김; 닫으면 `localStorage['install-dismissed']=1`.
 
 - [ ] 검증: `npm run build && npm start` → Chrome Lighthouse PWA 설치 가능, 오프라인 전환 시 `/offline` 표시, 로그인 응답이 캐시 스토리지에 없음(DevTools Application). → Commit `feat: add PWA manifest, service worker, offline page, and install prompt`
 

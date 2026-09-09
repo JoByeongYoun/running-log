@@ -2,8 +2,8 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: '우리들의 러닝일지',
-    short_name: '러닝일지',
+    name: 'Running Log',
+    short_name: 'Running Log',
     id: '/',
     start_url: '/',
     scope: '/',

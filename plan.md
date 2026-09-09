@@ -1,4 +1,4 @@
-# 우리들의 러닝일지 — 작업 기획서
+# Running Log — 작업 기획서
 
 버전: 1.0 · 작성일: 2026-09-08
 
@@ -302,8 +302,8 @@ group_weeks에는 확정 당시 그룹명과 그룹 합계도 저장한다. 사�
 
 ### 매니페스트
 
-- name: 우리들의 러닝일지
-- short_name: 러닝일지
+- name: Running Log
+- short_name: Running Log
 - id / start_url / scope: `/`
 - display: standalone
 - lang: ko-KR
