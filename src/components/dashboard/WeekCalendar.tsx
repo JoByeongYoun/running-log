@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { formatMeters } from '@/lib/domain/distance';
+import { assignRanks } from '@/lib/domain/rank';
 import { Avatar } from '@/components/ui/Avatar';
 import { Modal } from '@/components/ui/Modal';
 import { MemberModal } from './MemberModal';
@@ -13,6 +14,8 @@ export function WeekCalendar({ data, myId }: { data: WeekDashboard; myId: string
   const [open, setOpen] = useState<{ member: MemberRow; day: DayCell } | null>(null);
   const [profile, setProfile] = useState<MemberRow | null>(null);
   const backParam = `?week=${data.week.weekStart}&from=home`;
+  // 판정용 순위(m.rank)는 준비 주간 멤버가 null이므로, 표시용 순위는 전체 멤버를 승인 거리로 매긴다.
+  const displayRank = new Map(assignRanks(data.members.map((m) => ({ userId: m.userId, totalMeters: m.approvedMeters }))).map((r) => [r.userId, r.rank]));
 
   function openCell(member: MemberRow, day: DayCell, href: (id: string) => string, go: (href: string) => void) {
     if (day.records.length === 1) go(href(day.records[0].id));
@@ -39,7 +42,7 @@ export function WeekCalendar({ data, myId }: { data: WeekDashboard; myId: string
               <tr key={m.userId} className={m.userId === myId ? 'bg-emerald-50' : ''}>
                 <th scope="row" className={`sticky left-0 z-10 rounded-l-lg py-1 pr-1 text-left font-normal ${m.userId === myId ? 'bg-emerald-50' : 'bg-white'}`}>
                   <button type="button" onClick={() => setProfile(m)} aria-label={`${m.nickname} 이번 주 기록 보기`} className="-ml-1 flex w-full items-center gap-1 rounded-lg py-0.5 pl-1 text-left hover:bg-slate-100">
-                    <span className="w-4 shrink-0 text-right text-[11px] font-semibold text-slate-500">{m.rank ?? '-'}</span>
+                    <span className="w-4 shrink-0 text-right text-[11px] font-semibold text-slate-500">{displayRank.get(m.userId)}</span>
                     <Avatar src={m.avatarUrl ?? null} name={m.nickname} size={24} />
                     <div className="min-w-0">
                       <p className="truncate font-medium">{m.nickname}</p>
