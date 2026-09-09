@@ -1,5 +1,6 @@
 import { forwardRef } from 'react';
 import { formatMeters } from '@/lib/domain/distance';
+import { assignRanks } from '@/lib/domain/rank';
 import { formatWeekRange } from '@/lib/domain/week';
 import { Avatar } from '@/components/ui/Avatar';
 import type { WeekSummary, MemberRow } from '@/lib/dashboard/types';
@@ -20,6 +21,8 @@ export const SummaryCard = forwardRef<HTMLDivElement, { summary: WeekSummary; pa
   const { week, members, myUserId } = summary;
   const slice = members.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
   const me = members.find((m) => m.userId === myUserId);
+  // 판정용 순위(m.rank)는 준비 주간 멤버가 null이므로, 표시용 순위는 전체 멤버를 승인 거리로 매긴다.
+  const displayRank = new Map(assignRanks(members.map((m) => ({ userId: m.userId, totalMeters: m.approvedMeters }))).map((r) => [r.userId, r.rank]));
   const successes = members.filter((m) => m.eligible && (m.outcome === 'success' || m.outcome === 'provisional_success'));
   const failures = members.filter((m) => m.eligible && (m.outcome === 'fail' || m.outcome === 'provisional_fail'));
   const preps = members.filter((m) => !m.eligible);
@@ -36,13 +39,13 @@ export const SummaryCard = forwardRef<HTMLDivElement, { summary: WeekSummary; pa
       {me && page === 0 && (
         <div className={`mt-3 rounded-xl p-3 ${me.outcome.includes('success') ? 'bg-emerald-50' : me.outcome.includes('fail') ? 'bg-red-50' : 'bg-slate-50'}`}>
           <p className="text-xs text-slate-500">나의 결과</p>
-          <p className="text-xl font-bold">{outcomeText(me)} · {formatMeters(me.approvedMeters)} km{me.rank ? ` · ${me.rank}위` : ''}</p>
+          <p className="text-xl font-bold">{outcomeText(me)} · {formatMeters(me.approvedMeters)} km{` · ${displayRank.get(me.userId)}위`}</p>
         </div>
       )}
       <ol className="mt-3 divide-y divide-slate-100">
         {slice.map((m) => (
           <li key={m.userId} className={`flex items-center gap-2 py-1.5 text-sm ${m.userId === myUserId ? 'font-semibold' : ''}`}>
-            <span className="w-8 text-slate-500">{m.rank ? `${m.rank}위` : '-'}</span>
+            <span className="w-8 text-slate-500">{displayRank.get(m.userId)}위</span>
             <Avatar src={m.avatarUrl ?? null} name={m.nickname} size={24} />
             <span className="min-w-0 flex-1 truncate">{m.nickname}{m.leftDuringWeek || !m.activeNow ? <span className="ml-1 text-xs font-normal text-slate-400">탈퇴</span> : null}</span>
             <span className="tabular-nums">{formatMeters(m.approvedMeters)} km</span>
