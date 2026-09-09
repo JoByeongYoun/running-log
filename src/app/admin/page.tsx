@@ -67,7 +67,7 @@ export default async function AdminPage({ searchParams }: PageProps<'/admin'>) {
         {tab === 'requests' && <JoinRequests items={requestItems} />}
         {tab === 'reviews' && <ReviewQueue groupId={groupId} />}
         {tab === 'members' && (
-          <MemberList groupId={groupId} members={memberItems} myId={session.user.id} initialInvite={invite} siteUrl={process.env.NEXT_PUBLIC_SITE_URL ?? ''} />
+          <MemberList groupId={groupId} members={memberItems} myId={session.user.id} initialInvite={invite} siteUrl={(process.env.NEXT_PUBLIC_SITE_URL ?? '').replace(/\/+$/, '')} />
         )}
         {tab === 'settings' && <SettingsTab groupId={groupId} name={state.membership.groupName} />}
       </main>

@@ -8,7 +8,7 @@ import { safeReturnTo } from '@/lib/auth/return-to';
 export type ActionState = { error?: string; success?: string };
 
 function siteUrl() {
-  return process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
+  return (process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000').replace(/\/+$/, '');
 }
 
 export async function signUp(_prev: ActionState, formData: FormData): Promise<ActionState> {
