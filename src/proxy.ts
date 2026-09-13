@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { updateSession } from '@/lib/supabase/proxy';
 
-const PUBLIC_PREFIXES = ['/login', '/signup', '/forgot-password', '/reset-password', '/auth/', '/offline', '/api/cron/', '/icons/', '/manifest.webmanifest', '/sw.js', '/join/'];
+const PUBLIC_PREFIXES = ['/login', '/signup', '/forgot-password', '/reset-password', '/auth/', '/offline', '/api/cron/', '/api/push/', '/icons/', '/manifest.webmanifest', '/sw.js', '/join/'];
 const AUTH_ONLY_PAGES = ['/login', '/signup'];
 
 function isPublic(pathname: string) {
