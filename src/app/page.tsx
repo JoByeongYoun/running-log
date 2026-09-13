@@ -13,6 +13,7 @@ import { ScrollRestore } from '@/components/dashboard/ScrollRestore';
 import { RecordForm } from '@/components/record/RecordForm';
 import { SummaryAutoShow } from '@/components/summary/SummaryAutoShow';
 import { SummaryButton } from '@/components/summary/SummaryButton';
+import { PushBanner } from '@/components/pwa/PushBanner';
 import { ErrorState } from '@/components/ui/States';
 import { messageForError } from '@/lib/errors';
 
@@ -58,6 +59,7 @@ export default async function HomePage({ searchParams }: PageProps<'/'>) {
       <main className="mx-auto w-full max-w-md space-y-4 px-4 py-4">
         <ScrollRestore storageKey={`scroll:/?week=${weekStart}`} />
         <SummaryAutoShow />
+        <PushBanner />
         <div className="flex items-center justify-between">
           <WeekNav weekStart={weekStart} currentWeek={currentWeek} firstWeek={firstWeek} />
         </div>
