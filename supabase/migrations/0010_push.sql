@@ -1,4 +1,4 @@
--- 0009_push.sql : Web Push 구독, 알림 웹훅(pg_net), 발송 페이로드 RPC
+-- 0010_push.sql : Web Push 구독, 알림 웹훅(pg_net), 발송 페이로드 RPC
 create extension if not exists pg_net with schema extensions;
 
 -- ---------------------------------------------------------------------------
