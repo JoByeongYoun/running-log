@@ -6,24 +6,41 @@ export function ServiceWorker() {
   const [waiting, setWaiting] = useState<globalThis.ServiceWorker | null>(null);
   useEffect(() => {
     if (!('serviceWorker' in navigator) || process.env.NODE_ENV !== 'production') return;
-    let reg: ServiceWorkerRegistration | undefined;
+    let disposed = false;
+    const cleanups: Array<() => void> = [];
+    const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
     navigator.serviceWorker.register('/sw.js').then((r) => {
-      reg = r;
-      if (r.waiting) setWaiting(r.waiting);
-      r.addEventListener('updatefound', () => {
+      if (disposed) return;
+      if (r.waiting) {
+        setWaiting(r.waiting);
+        // A browser reload also accepts an update that was already waiting.
+        // Updates discovered later still need the user's button click.
+        if (navigation?.type === 'reload') r.waiting.postMessage({ type: 'SKIP_WAITING' });
+      }
+      const onUpdateFound = () => {
         const sw = r.installing;
-        sw?.addEventListener('statechange', () => {
+        if (!sw) return;
+        const onStateChange = () => {
           if (sw.state === 'installed' && navigator.serviceWorker.controller) setWaiting(sw);
-        });
-      });
+        };
+        sw.addEventListener('statechange', onStateChange);
+        cleanups.push(() => sw.removeEventListener('statechange', onStateChange));
+      };
+      r.addEventListener('updatefound', onUpdateFound);
+      cleanups.push(() => r.removeEventListener('updatefound', onUpdateFound));
     }).catch(() => {});
     let refreshing = false;
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
+    const onControllerChange = () => {
       if (refreshing) return;
       refreshing = true;
       window.location.reload();
-    });
-    return () => { void reg; };
+    };
+    navigator.serviceWorker.addEventListener('controllerchange', onControllerChange);
+    return () => {
+      disposed = true;
+      navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
+      cleanups.forEach((cleanup) => cleanup());
+    };
   }, []);
   if (!waiting) return null;
   return (
