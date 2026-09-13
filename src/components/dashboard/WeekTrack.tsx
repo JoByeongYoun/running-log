@@ -11,12 +11,15 @@ import { OUTCOME_LABEL, STATUS_LABEL, type MemberRow, type WeekDashboard } from 
 
 /** 이 비율보다 양 끝에 가까우면 캡션을 프로필 가장자리에 붙여 트랙 밖으로 나가지 않게 한다. */
 const CAPTION_EDGE_PCT = 14;
-/** 레인 높이(px)와 그 안에서 바 중심선의 y 위치 */
-const LANE_H = 60;
-const BAR_Y = 41;
+/** 레인 높이(px)와 그 안에서 달린 자취(조각) 중심선의 y 위치 */
+const LANE_H = 62;
+const TRAIL_Y = 42;
+const TRAIL_H = 18;
 /** 조각 안에 거리 라벨을 넣을 최소 폭(%) */
 const LABEL_MIN_PCT = 11;
-const AVATAR = 28;
+const AVATAR = 30;
+/** 트랙 좌우 여백: 프로필이 START/끝에서 절반씩 걸치는 공간 */
+const TRACK_PAD = AVATAR / 2 + 4;
 
 function dateLabel(date: string) {
   const [, m, d] = date.split('-');
@@ -37,10 +40,10 @@ export function WeekTrack({ data, myId }: { data: WeekDashboard; myId: string })
   const displayRank = new Map(assignRanks(data.members.map((m) => ({ userId: m.userId, totalMeters: m.approvedMeters }))).map((r) => [r.userId, r.rank]));
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-gradient-to-b from-white to-slate-50 p-3 sm:p-4" aria-labelledby="week-track-title">
+    <section className="rounded-2xl border border-slate-200 p-3 sm:p-4" aria-labelledby="week-track-title">
       <div className="mb-3 flex items-center justify-between gap-2">
         <h2 id="week-track-title" className="flex items-center gap-1.5 font-semibold">
-          <span aria-hidden>🏁</span> 주간 트랙
+          <span aria-hidden>🏟️</span> 주간 트랙
         </h2>
         <div className="flex items-center gap-1.5">
           {data.provisional && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">{data.week.state === 'closing' ? '집계 중' : '잠정'}</span>}
@@ -51,42 +54,50 @@ export function WeekTrack({ data, myId }: { data: WeekDashboard; myId: string })
       {data.members.length === 0 ? (
         <p className="py-4 text-center text-sm text-slate-500">이 주에는 멤버가 없습니다.</p>
       ) : (
-        <div className="flex gap-2">
-          {/* 순위 열 */}
-          <ol className="flex w-6 shrink-0 flex-col pt-6" aria-hidden>
+        /* 잔디 인필드 위에 놓인 트랙 */
+        <div className="track-grass flex gap-1.5 rounded-2xl p-2 shadow-inner">
+          {/* 순위 열 (잔디 위) */}
+          <ol className="flex w-7 shrink-0 flex-col pt-7" aria-hidden>
             {data.members.map((m) => (
-              <li key={m.userId} className="flex items-start justify-center" style={{ height: LANE_H, paddingTop: BAR_Y - 10 }}>
+              <li key={m.userId} className="flex items-start justify-center" style={{ height: LANE_H, paddingTop: TRAIL_Y - 10 }}>
                 <RankBadge rank={displayRank.get(m.userId)} />
               </li>
             ))}
           </ol>
 
-          {/* 트랙: 좌우 여백은 프로필이 트랙 끝에서 절반씩 걸치는 공간 */}
-          <div className="relative min-w-0 flex-1" style={{ paddingLeft: AVATAR / 2, paddingRight: AVATAR / 2 }}>
-            <div className="relative">
-              {/* START / GOAL 마커: 모든 레인을 관통하는 세로 점선 */}
-              <div className="relative h-6 text-[10px] font-semibold tracking-wider text-slate-400">
-                <span className="absolute left-0 top-0.5 -translate-x-1/2">START</span>
-                <span className="absolute top-0 -translate-x-1/2 whitespace-nowrap rounded-full bg-white px-1.5 py-0.5 text-slate-700 shadow-sm ring-1 ring-slate-200" style={{ left: `${track.goalPct}%` }}>
-                  <span aria-hidden>🏁</span> GOAL
-                </span>
-              </div>
-              <div className="pointer-events-none absolute bottom-0 top-6 z-10 border-l-2 border-dashed border-slate-300/90" style={{ left: `${track.goalPct}%` }} aria-hidden />
+          <div className="relative min-w-0 flex-1">
+            {/* START / FINISH 라벨 */}
+            <div className="relative h-7 text-[10px] font-bold tracking-widest text-white drop-shadow" style={{ marginLeft: TRACK_PAD, marginRight: TRACK_PAD }}>
+              <span className="absolute left-0 top-1 -translate-x-1/2">START</span>
+              <span className="absolute top-0 -translate-x-1/2 whitespace-nowrap rounded-full bg-white px-1.5 py-0.5 text-slate-800 shadow-sm" style={{ left: `${track.goalPct}%` }}>
+                <span aria-hidden>🏁</span> FINISH
+              </span>
+            </div>
 
-              <ul className="flex flex-col">
-                {data.members.map((m) => (
-                  <Lane
-                    key={m.userId}
-                    member={m}
-                    lane={track.lanes.get(m.userId)!}
-                    goalPct={track.goalPct}
-                    isMe={m.userId === myId}
-                    ran={ran}
-                    backParam={backParam}
-                    onOpenProfile={() => setProfile(m)}
-                  />
-                ))}
-              </ul>
+            {/* 붉은 타탄 트랙: 흰 테두리 + 레인 */}
+            <div className="track-surface relative overflow-hidden rounded-xl ring-2 ring-white/90">
+              {/* 출발선·결승선: 모든 레인을 관통 */}
+              <div className="pointer-events-none absolute inset-y-0 z-10" style={{ left: TRACK_PAD, right: TRACK_PAD }} aria-hidden>
+                <div className="absolute inset-y-0 left-0 w-[3px] -translate-x-1/2 bg-white" />
+                <div className="track-finish absolute inset-y-0 w-2.5 -translate-x-1/2 shadow-[0_0_0_1px_rgba(255,255,255,0.9)]" style={{ left: `${track.goalPct}%` }} />
+              </div>
+              <div className="relative">
+                <ul className="flex flex-col">
+                  {data.members.map((m) => (
+                    <Lane
+                      key={m.userId}
+                      member={m}
+                      lane={track.lanes.get(m.userId)!}
+                      goalPct={track.goalPct}
+                      targetMeters={data.week.targetMeters}
+                      isMe={m.userId === myId}
+                      ran={ran}
+                      backParam={backParam}
+                      onOpenProfile={() => setProfile(m)}
+                    />
+                  ))}
+                </ul>
+              </div>
             </div>
           </div>
         </div>
@@ -102,87 +113,91 @@ type LaneProps = {
   member: MemberRow;
   lane: TrackLane;
   goalPct: number;
+  targetMeters: number;
   isMe: boolean;
   ran: boolean;
   backParam: string;
   onOpenProfile: () => void;
 };
 
-function Lane({ member: m, lane, goalPct, isMe, ran, backParam, onOpenProfile }: LaneProps) {
-  const sidelined = m.joinedThisWeek || m.leftDuringWeek || !m.activeNow;
+function Lane({ member: m, lane, goalPct, targetMeters, isMe, ran, backParam, onOpenProfile }: LaneProps) {
   const reachedGoal = m.approvedMeters > 0 && lane.approvedPct >= goalPct;
-  const status = m.joinedThisWeek ? '준비 주간' : (m.leftDuringWeek || !m.activeNow) ? '탈퇴' : null;
+  const remaining = Math.max(0, targetMeters - m.approvedMeters);
+  const status = m.leftDuringWeek || !m.activeNow ? '탈퇴' : null;
   // 캡션이 트랙 밖으로 나가지 않도록 양 끝에서는 프로필 가장자리에 맞춰 정렬한다.
   const anchor = lane.approvedPct < CAPTION_EDGE_PCT ? 'start' : lane.approvedPct > 100 - CAPTION_EDGE_PCT ? 'end' : 'center';
   const captionShift = anchor === 'start' ? `-${AVATAR / 2}px` : anchor === 'end' ? `calc(-100% + ${AVATAR / 2}px)` : '-50%';
   const runnerLeft = ran ? `${lane.approvedPct}%` : '0%';
 
   return (
-    <li className="relative" style={{ height: LANE_H }}>
-      {/* 레인 바 */}
-      <div className={`absolute inset-x-0 h-4 overflow-hidden rounded-full bg-slate-100 ring-1 ring-inset ${isMe ? 'ring-emerald-300' : 'ring-slate-200/80'}`} style={{ top: BAR_Y - 8 }} aria-hidden>
-        <div className="absolute inset-y-0 left-2 right-2 top-1/2 border-t-2 border-dashed border-white" />
-        {/* 골 너머 오버런 구간 */}
-        {goalPct < 100 && <div className="track-overrun absolute inset-y-0 right-0" style={{ left: `${goalPct}%` }} />}
-      </div>
+    <li className="track-lane relative" style={{ height: LANE_H }}>
+      <div className="relative h-full" style={{ marginLeft: TRACK_PAD, marginRight: TRACK_PAD }}>
+        {/* 결승선 너머 오버런 구간 */}
+        {goalPct < 100 && <div className="track-overrun pointer-events-none absolute inset-y-0" style={{ left: `${goalPct}%`, right: -TRACK_PAD }} aria-hidden />}
 
-      {/* 기록 조각들: 하나가 하나의 기록 상세 링크 */}
-      {lane.segments.map((s, i) => (
-        <Segment key={s.id} seg={s} index={i} count={lane.segments.length} nickname={m.nickname} ran={ran} href={`/records/${s.id}${backParam}`} />
-      ))}
+        {/* 기록 조각들(달린 자취): 하나가 하나의 기록 상세 링크 */}
+        {lane.segments.map((s, i) => (
+          <Segment key={s.id} seg={s} index={i} count={lane.segments.length} nickname={m.nickname} ran={ran} href={`/records/${s.id}${backParam}`} />
+        ))}
 
-      {/* 러너: 승인 합계 지점에 프로필 사진이 서고, 그 위에 닉네임·거리 캡션이 따라간다. */}
-      <button
-        type="button"
-        onClick={onOpenProfile}
-        aria-label={`${m.nickname} 이번 주 기록 보기 · 승인 ${formatMeters(m.approvedMeters)} km${status ? ` · ${status}` : ''}`}
-        className={`track-runner absolute z-20 -translate-x-1/2 -translate-y-1/2 rounded-full shadow-md ring-2 transition-[left] duration-1000 ease-out hover:shadow-lg active:scale-95 motion-reduce:transition-none ${isMe ? 'ring-emerald-400' : 'ring-white'} ${sidelined ? 'grayscale' : ''}`}
-        style={{ left: runnerLeft, top: BAR_Y, width: AVATAR, height: AVATAR }}
-      >
-        <span className={`block rounded-full ${isMe && ran ? 'track-bob' : ''}`}>
-          <Avatar src={m.avatarUrl ?? null} name={m.nickname} size={AVATAR} />
-        </span>
-        {lane.overMeters > 0 && <span className="absolute -right-1.5 -top-1.5 text-xs leading-none" aria-hidden>🎉</span>}
-        <span className="sr-only">{OUTCOME_LABEL[m.outcome]}</span>
-      </button>
-      <div
-        className="pointer-events-none absolute top-0 z-20 flex max-w-[60%] items-baseline gap-1 whitespace-nowrap rounded-full bg-white/90 px-1.5 py-px text-[11px] leading-4 shadow-sm ring-1 ring-slate-200/80 backdrop-blur-[2px] transition-[left] duration-1000 ease-out motion-reduce:transition-none"
-        style={{ left: runnerLeft, transform: `translateX(${captionShift})` }}
-        aria-hidden
-      >
-        <span className={`truncate font-semibold ${sidelined ? 'text-slate-500' : 'text-slate-900'}`}>{m.nickname}</span>
-        {isMe && <span className="shrink-0 rounded-full bg-emerald-500 px-1 text-[9px] font-bold leading-3.5 text-white">나</span>}
-        {status ? (
-          <span className="shrink-0 text-[10px] text-slate-500">{status}</span>
-        ) : (
-          <span className={`shrink-0 tabular-nums ${reachedGoal ? 'font-semibold text-emerald-700' : 'text-slate-600'}`}>
-            {formatMeters(m.approvedMeters)}
-            {lane.overMeters > 0 && <span className="ml-0.5 text-[10px] text-emerald-600">+{formatMeters(lane.overMeters)}</span>}
+        {/* 러너: 승인 합계 지점에 프로필 사진이 서고, 그 위에 닉네임·거리 캡션이 따라간다. */}
+        <button
+          type="button"
+          onClick={onOpenProfile}
+          aria-label={`${m.nickname} 이번 주 기록 보기 · 승인 ${formatMeters(m.approvedMeters)} km · ${reachedGoal ? '목표 달성' : `남은 ${formatMeters(remaining)} km`}${status ? ` · ${status}` : ''}`}
+          className={`track-runner absolute z-20 -translate-x-1/2 -translate-y-1/2 rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.35)] ring-2 transition-[left] duration-1000 ease-out hover:scale-105 active:scale-95 motion-reduce:transition-none ${isMe ? 'ring-lime-300' : 'ring-white'}`}
+          style={{ left: runnerLeft, top: TRAIL_Y, width: AVATAR, height: AVATAR }}
+        >
+          <span className={`block rounded-full ${isMe && ran ? 'track-bob' : ''}`}>
+            <Avatar src={m.avatarUrl ?? null} name={m.nickname} size={AVATAR} />
           </span>
-        )}
+          {lane.overMeters > 0 && <span className="absolute -right-2 -top-2 text-sm leading-none drop-shadow" aria-hidden>🎉</span>}
+          <span className="sr-only">{OUTCOME_LABEL[m.outcome]}</span>
+        </button>
+        <div
+          className="pointer-events-none absolute top-1.5 z-20 flex max-w-[60%] items-baseline gap-1 whitespace-nowrap rounded-full bg-white px-1.5 py-px text-[11px] leading-4 shadow-sm transition-[left] duration-1000 ease-out motion-reduce:transition-none"
+          style={{ left: runnerLeft, transform: `translateX(${captionShift})` }}
+          aria-hidden
+        >
+          <span className="truncate font-semibold text-slate-900">{m.nickname}</span>
+          {isMe && <span className="shrink-0 rounded-full bg-lime-500 px-1 text-[9px] font-bold leading-3.5 text-white">나</span>}
+          {status ? (
+            <span className="shrink-0 text-[10px] text-slate-500">{status}</span>
+          ) : (
+            <span className={`shrink-0 tabular-nums ${reachedGoal ? 'font-semibold text-lime-700' : 'text-slate-700'}`}>
+              {formatMeters(m.approvedMeters)}
+              {reachedGoal ? (
+                <span className="ml-1 text-[10px] font-medium text-lime-700">{lane.overMeters > 0 ? `+${formatMeters(lane.overMeters)} 초과` : '달성'}</span>
+              ) : (
+                <span className="ml-1 text-[10px] text-slate-500">· {formatMeters(remaining)} 남음</span>
+              )}
+            </span>
+          )}
+        </div>
       </div>
     </li>
   );
 }
+
 function Segment({ seg, index, count, nickname, ran, href }: { seg: TrackSegment; index: number; count: number; nickname: string; ran: boolean; href: string }) {
   const label = `${nickname} ${dateLabel(seg.date)} 기록 ${formatMeters(seg.meters)} km · ${STATUS_LABEL[seg.status]}`;
   const tone = seg.status === 'pending'
     ? 'track-seg-pending text-amber-900'
-    : index % 2 === 0 ? 'bg-gradient-to-b from-emerald-400 to-emerald-600 text-white' : 'bg-gradient-to-b from-teal-400 to-teal-600 text-white';
+    : index % 2 === 0 ? 'bg-gradient-to-b from-lime-200 to-lime-400 text-lime-950' : 'bg-gradient-to-b from-lime-100 to-lime-300 text-lime-950';
   return (
     <Link
       href={href}
       title={label}
       aria-label={label}
-      className="group absolute h-9 min-w-[10px] -translate-y-1/2 outline-none"
-      style={{ top: BAR_Y, left: `${seg.startPct}%`, width: `${seg.widthPct}%`, zIndex: count - index }}
+      className="group absolute h-10 min-w-[10px] -translate-y-1/2 outline-none"
+      style={{ top: TRAIL_Y, left: `${seg.startPct}%`, width: `${seg.widthPct}%`, zIndex: count - index }}
     >
       <span
-        className={`track-seg absolute inset-x-0 top-1/2 h-4 -translate-y-1/2 origin-left border-r border-white/90 transition-transform duration-1000 ease-out group-hover:brightness-110 group-focus-visible:ring-2 group-focus-visible:ring-sky-400 motion-reduce:transition-none ${tone} ${index === 0 ? 'rounded-l-full' : ''} ${index === count - 1 ? 'rounded-r-full' : ''}`}
-        style={{ transform: `translateY(-50%) scaleX(${ran ? 1 : 0})`, transitionDelay: `${Math.min(index, 6) * 90}ms` }}
+        className={`absolute inset-x-0 top-1/2 origin-left border-r border-white/90 shadow-[0_1px_2px_rgba(0,0,0,0.25)] transition-transform duration-1000 ease-out group-hover:brightness-105 group-focus-visible:ring-2 group-focus-visible:ring-white motion-reduce:transition-none ${tone} ${index === 0 ? 'rounded-l-full' : ''} ${index === count - 1 ? 'rounded-r-full' : ''}`}
+        style={{ height: TRAIL_H, transform: `translateY(-50%) scaleX(${ran ? 1 : 0})`, transitionDelay: `${Math.min(index, 6) * 90}ms` }}
       >
         {seg.widthPct >= LABEL_MIN_PCT && (
-          <span className="absolute inset-0 flex items-center justify-center truncate px-1 text-[10px] font-semibold leading-none drop-shadow-sm" aria-hidden>
+          <span className="absolute inset-0 flex items-center justify-center truncate px-1 text-[10px] font-bold leading-none" aria-hidden>
             {formatMeters(seg.meters)}
           </span>
         )}
@@ -194,9 +209,9 @@ function Segment({ seg, index, count, nickname, ran, href }: { seg: TrackSegment
 function Legend() {
   return (
     <ul className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500" aria-label="범례">
-      <li className="flex items-center gap-1"><span className="inline-block h-2.5 w-4 rounded-full bg-gradient-to-b from-emerald-400 to-emerald-600" aria-hidden />승인된 기록</li>
-      <li className="flex items-center gap-1"><span className="track-seg-pending inline-block h-2.5 w-4 rounded-full" aria-hidden />승인 대기</li>
-      <li className="flex items-center gap-1"><span className="inline-block h-2.5 border-l-2 border-dashed border-slate-300" aria-hidden />목표 지점</li>
+      <li className="flex items-center gap-1"><span className="inline-block h-2.5 w-4 rounded-full bg-gradient-to-b from-lime-200 to-lime-400 ring-1 ring-lime-500/40" aria-hidden />승인된 기록</li>
+      <li className="flex items-center gap-1"><span className="track-seg-pending inline-block h-2.5 w-4 rounded-full ring-1 ring-amber-400/60" aria-hidden />승인 대기</li>
+      <li className="flex items-center gap-1"><span className="track-finish inline-block h-3 w-2" aria-hidden />목표(결승선)</li>
       <li className="ml-auto text-slate-400">조각을 누르면 기록 상세로 이동</li>
     </ul>
   );
