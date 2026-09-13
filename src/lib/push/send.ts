@@ -14,7 +14,13 @@ export function isPushConfigured(): boolean {
   const priv = process.env.VAPID_PRIVATE_KEY;
   const subject = process.env.VAPID_SUBJECT;
   if (!pub || !priv || !subject) { configured = false; return false; }
-  webpush.setVapidDetails(subject, pub, priv);
+  try {
+    webpush.setVapidDetails(subject, pub, priv);
+  } catch {
+    console.error(JSON.stringify({ job: 'push', event: 'vapid_invalid' }));
+    configured = false;
+    return false;
+  }
   configured = true;
   return true;
 }
@@ -23,7 +29,11 @@ export async function sendToUser(admin: SupabaseClient<Database>, userId: string
   const result: SendResult = { sent: 0, removed: 0, failed: 0 };
   if (!isPushConfigured()) return result;
   const { data: rows, error } = await admin.from('push_subscriptions').select('id, endpoint, p256dh, auth').eq('user_id', userId);
-  if (error || !rows) { result.failed = 1; return result; }
+  if (error || !rows) {
+    if (error) console.error(JSON.stringify({ job: 'push', event: 'select_failed', message: error.message }));
+    result.failed = 1;
+    return result;
+  }
   const body = JSON.stringify(payload);
   await Promise.all(rows.map(async (row) => {
     try {

@@ -2,7 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 const sendNotification = vi.fn();
-vi.mock('web-push', () => ({ default: { setVapidDetails: vi.fn(), sendNotification } }));
+const setVapidDetails = vi.fn();
+vi.mock('web-push', () => ({ default: { setVapidDetails, sendNotification } }));
 
 type Row = { id: string; endpoint: string; p256dh: string; auth: string };
 function fakeAdmin(rows: Row[]) {
@@ -20,6 +21,7 @@ function fakeAdmin(rows: Row[]) {
 describe('sendToUser', () => {
   beforeEach(() => {
     sendNotification.mockReset();
+    setVapidDetails.mockReset();
     process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY = 'pub';
     process.env.VAPID_PRIVATE_KEY = 'priv';
     process.env.VAPID_SUBJECT = 'mailto:test@example.com';
@@ -59,5 +61,28 @@ describe('sendToUser', () => {
     expect(result).toEqual({ sent: 0, removed: 0, failed: 0 });
     expect(sendNotification).not.toHaveBeenCalled();
     expect(mockFrom).not.toHaveBeenCalled();
+  });
+
+  it('treats a malformed VAPID config (setVapidDetails throws) as unconfigured, without throwing', async () => {
+    vi.resetModules();
+    setVapidDetails.mockImplementationOnce(() => { throw new Error('invalid subject'); });
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { isPushConfigured } = await import('@/lib/push/send');
+    expect(() => isPushConfigured()).not.toThrow();
+    expect(isPushConfigured()).toBe(false);
+    errorSpy.mockRestore();
+  });
+
+  it('logs when the subscription select fails', async () => {
+    vi.resetModules();
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { sendToUser } = await import('@/lib/push/send');
+    const admin = {
+      from: () => ({ select: () => ({ eq: async () => ({ data: null, error: { message: 'boom' } }) }) }),
+    } as never;
+    const result = await sendToUser(admin, 'u1', { title: 't', body: 'b', url: '/', tag: 'n1' });
+    expect(result).toEqual({ sent: 0, removed: 0, failed: 1 });
+    expect(errorSpy).toHaveBeenCalledWith(JSON.stringify({ job: 'push', event: 'select_failed', message: 'boom' }));
+    errorSpy.mockRestore();
   });
 });
