@@ -6,6 +6,7 @@ import { assignRanks } from '@/lib/domain/rank';
 import { Avatar } from '@/components/ui/Avatar';
 import { Modal } from '@/components/ui/Modal';
 import { MemberModal } from './MemberModal';
+import { RankBadge } from './RankBadge';
 import { OUTCOME_LABEL, STATUS_LABEL, type DayCell, type MemberRow, type WeekDashboard } from '@/lib/dashboard/types';
 
 const DOW = ['월', '화', '수', '목', '금', '토', '일'];
@@ -101,8 +102,3 @@ export function WeekCalendar({ data, myId }: { data: WeekDashboard; myId: string
   );
 }
 
-function RankBadge({ rank }: { rank: number | undefined }) {
-  if (rank == null) return <span className="text-slate-300">-</span>;
-  const tone = rank === 1 ? 'bg-amber-400 text-slate-900' : rank === 2 ? 'bg-slate-300 text-slate-800' : rank === 3 ? 'bg-orange-300 text-slate-900' : 'bg-slate-100 text-slate-600';
-  return <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold ${tone}`}>{rank}</span>;
-}

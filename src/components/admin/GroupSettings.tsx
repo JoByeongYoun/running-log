@@ -1,6 +1,6 @@
 'use client';
 import { useActionState } from 'react';
-import { renameGroup, scheduleSettings } from '@/actions/group';
+import { renameGroup, scheduleSettings, setGroupNotice } from '@/actions/group';
 import type { ActionState } from '@/actions/auth';
 import { Input, Textarea } from '@/components/ui/Input';
 import { SubmitButton } from '@/components/ui/SubmitButton';
@@ -12,9 +12,11 @@ type Props = {
   groupId: string; name: string;
   current: { targetMeters: number; penalty: string; weekStart: string };
   scheduled: { targetMeters: number; penalty: string; weekStart: string } | null;
+  notice: string | null;
 };
 
-export function GroupSettings({ groupId, name, current, scheduled }: Props) {
+export function GroupSettings({ groupId, name, current, scheduled, notice }: Props) {
+  const [noticeState, noticeAction] = useActionState<ActionState, FormData>(setGroupNotice, {});
   const [nameState, nameAction] = useActionState<ActionState, FormData>(renameGroup, {});
   const [setState, setAction] = useActionState<ActionState, FormData>(scheduleSettings, {});
   return (
@@ -25,6 +27,15 @@ export function GroupSettings({ groupId, name, current, scheduled }: Props) {
           <Input label="그룹명" name="name" defaultValue={name} required minLength={2} maxLength={30} hint="즉시 변경됩니다. 확정된 과거 결과의 그룹명은 바뀌지 않습니다." />
           <FormMessage error={nameState.error} success={nameState.success} />
           <SubmitButton variant="secondary" full>그룹명 변경</SubmitButton>
+        </form>
+      </Card>
+      <Card>
+        <form action={noticeAction} className="space-y-3">
+          <input type="hidden" name="groupId" value={groupId} />
+          <h3 className="font-semibold">공지사항</h3>
+          <Textarea label="기록 등록 화면에 표시할 공지" name="notice" defaultValue={notice ?? ''} maxLength={500} rows={3} placeholder="예: 사진은 러닝 앱 기록 화면 캡처로 올려주세요." hint="멤버가 기록을 올릴 때 폼 위에 표시됩니다. 비우고 저장하면 공지가 사라집니다." />
+          <FormMessage error={noticeState.error} success={noticeState.success} />
+          <SubmitButton full>공지 저장</SubmitButton>
         </form>
       </Card>
       <Card className="space-y-3">

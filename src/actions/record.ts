@@ -34,6 +34,7 @@ const submitSchema = z.object({
   memo: memoSchema.optional(),
   uploadIds: uploadIdsSchema,
   clientDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  activityDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 });
 
 export type SubmitInput = z.input<typeof submitSchema>;
@@ -45,6 +46,7 @@ export async function submitRecord(input: SubmitInput): Promise<{ id?: string; e
   const { data, error } = await supabase.rpc('submit_record', {
     p_submission_key: parsed.data.submissionKey, p_distance_meters: parsed.data.distance,
     p_memo: parsed.data.memo ?? '', p_upload_ids: parsed.data.uploadIds, p_client_date: parsed.data.clientDate,
+    p_activity_date: parsed.data.activityDate ?? parsed.data.clientDate,
   });
   if (error) return { error: messageForError(error), code: errorCode(error) ?? undefined };
   revalidatePath('/');
@@ -90,5 +92,26 @@ export async function deleteRecord(recordId: string): Promise<{ error?: string }
   if (error) return { error: messageForError(error) };
   await removeEvidence(data);
   revalidatePath('/');
+  return {};
+}
+
+const removePhotoSchema = z.object({ recordId: uuidSchema, photoId: uuidSchema, keepPhotoIds: z.array(uuidSchema), distance: distanceInputSchema(), memo: memoSchema.optional(), expectedVersion: z.number().int().positive() });
+export type RemovePhotoInput = z.input<typeof removePhotoSchema>;
+
+/** 사진 1장만 삭제 (기록 내용은 유지). 남은 사진이 1장 이상이어야 한다. */
+export async function removePhoto(input: RemovePhotoInput): Promise<{ error?: string }> {
+  const parsed = removePhotoSchema.safeParse(input);
+  if (!parsed.success) return { error: firstIssue(parsed.error) };
+  const d = parsed.data;
+  const keep = d.keepPhotoIds.filter((id) => id !== d.photoId);
+  if (keep.length < 1) return { error: '사진은 최소 1장 남겨야 합니다. 기록 자체를 삭제하려면 삭제 버튼을 사용하세요.' };
+  const supabase = await createServerSupabase();
+  const { data, error } = await supabase.rpc('update_record', {
+    p_record_id: d.recordId, p_distance_meters: d.distance, p_memo: d.memo ?? '',
+    p_keep_photo_ids: keep, p_upload_ids: [], p_expected_version: d.expectedVersion,
+  });
+  if (error) return { error: messageForError(error) };
+  await removeEvidence(data);
+  revalidatePath('/'); revalidatePath(`/records/${d.recordId}`);
   return {};
 }

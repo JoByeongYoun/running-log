@@ -3,6 +3,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { PhotoLightbox } from '@/components/record/PhotoLightbox';
 import { formatMeters } from '@/lib/domain/distance';
+import { RankBadge } from './RankBadge';
 import { Avatar } from '@/components/ui/Avatar';
 import { Modal } from '@/components/ui/Modal';
 import { OUTCOME_LABEL, STATUS_LABEL, type MemberRow, type Outcome, type WeekDashboard } from '@/lib/dashboard/types';
@@ -61,9 +62,7 @@ export function MemberModal({ member, data, isMe, onClose }: Props) {
                   </div>
                 </div>
                 {m.rank != null && (
-                  <span className="absolute -bottom-1 -right-1 flex h-7 min-w-7 items-center justify-center rounded-full bg-amber-400 px-1.5 text-xs font-bold text-slate-900 shadow ring-2 ring-slate-900">
-                    {m.rank}위
-                  </span>
+                  <span className="absolute -bottom-1 -right-1"><RankBadge rank={m.rank} size="lg" suffix="위" /></span>
                 )}
               </div>
               <div className="min-w-0 flex-1">
