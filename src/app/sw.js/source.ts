@@ -43,7 +43,9 @@ self.addEventListener('notificationclick', (event) => {
   const target = new URL((event.notification.data && event.notification.data.url) || '/', self.location.origin).href;
   event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
     const win = list.find((c) => c.url.indexOf(self.location.origin) === 0);
-    if (win && 'navigate' in win) return win.navigate(target).then((w) => w && w.focus());
+    if (win && 'navigate' in win) {
+      return win.focus().then(function (w) { return (w || win).navigate(target); }).catch(function () { return self.clients.openWindow(target); });
+    }
     return self.clients.openWindow(target);
   }));
 });
