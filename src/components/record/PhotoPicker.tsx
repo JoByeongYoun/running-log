@@ -1,5 +1,6 @@
 'use client';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
+import { PhotoLightbox } from './PhotoLightbox';
 import { Button } from '@/components/ui/Button';
 import { MAX_PHOTOS } from '@/lib/domain/constants';
 
@@ -24,6 +25,7 @@ type Props = {
 
 export function PhotoPicker({ photos, onAdd, onRemove, onMove, onRetry, disabled }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [viewIdx, setViewIdx] = useState<number | null>(null);
   const remaining = MAX_PHOTOS - photos.length;
   return (
     <div className="space-y-2">
@@ -38,8 +40,10 @@ export function PhotoPicker({ photos, onAdd, onRemove, onMove, onRetry, disabled
         <ul className="grid grid-cols-3 gap-2">
           {photos.map((p, i) => (
             <li key={p.localId} className="relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={p.previewUrl} alt={`사진 ${i + 1}`} className="aspect-square w-full object-cover" />
+              <button type="button" onClick={() => setViewIdx(i)} className="block w-full" aria-label={`사진 ${i + 1} 확대`}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={p.previewUrl} alt={`사진 ${i + 1}`} className="aspect-square w-full object-cover" />
+              </button>
               <div className="absolute inset-x-0 top-0 flex justify-between p-1">
                 <span className="rounded-full bg-black/60 px-1.5 text-xs text-white">{i + 1}</span>
                 <button type="button" aria-label="사진 삭제" disabled={disabled} onClick={() => onRemove(p.localId)} className="min-h-7 min-w-7 rounded-full bg-black/60 text-white">×</button>
@@ -58,6 +62,7 @@ export function PhotoPicker({ photos, onAdd, onRemove, onMove, onRetry, disabled
           ))}
         </ul>
       )}
+      <PhotoLightbox photos={photos.map((p) => ({ id: p.localId, url: p.previewUrl }))} index={viewIdx} onChange={setViewIdx} />
       {photos.some((p) => p.status === 'error') && <p role="alert" className="text-xs text-red-600">{photos.find((p) => p.status === 'error')?.error}</p>}
     </div>
   );

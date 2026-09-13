@@ -1423,3 +1423,312 @@ end $$;
 grant execute on function public.get_unread_count(), public.mark_notifications_read(uuid[]), public.get_notifications(int),
   public.get_week_summary(uuid, date), public.claim_summary_auto_show() to authenticated;
 
+
+-- ===== 0008_realtime.sql =====
+-- 0008_realtime.sql : 화면 자동 갱신용 Realtime publication.
+-- 클라이언트는 postgres_changes 이벤트를 받으면 router.refresh()만 호출한다.
+-- 이벤트 페이로드는 각 테이블의 RLS select 정책을 통과한 행만 전달된다.
+alter publication supabase_realtime add table
+  public.running_records,
+  public.record_reviews,
+  public.comments,
+  public.notifications,
+  public.join_requests,
+  public.memberships,
+  public.group_weeks;
+
+-- ===== 0009_date_delete_notice.sql =====
+-- 0009_date_delete_notice.sql : 기록 날짜 선택(이번 주 월요일~오늘), 진행 중 주차 내 수정·삭제, 관리자 삭제, 그룹 공지사항
+
+-- ---------------------------------------------------------------------------
+-- Group notice (shown above the record form)
+-- ---------------------------------------------------------------------------
+alter table public.groups add column if not exists notice text check (char_length(notice) <= 500);
+alter table public.groups add column if not exists notice_updated_at timestamptz;
+
+create or replace function public.set_group_notice(p_group_id uuid, p_notice text) returns void
+language plpgsql security definer set search_path = public, app as $$
+declare v_notice text := nullif(btrim(coalesce(p_notice, '')), '');
+begin
+  perform app.require_user();
+  if not app.is_group_admin(p_group_id) then perform app.fail('forbidden'); end if;
+  if v_notice is not null and char_length(v_notice) > 500 then perform app.fail('invalid_input'); end if;
+  update public.groups set notice = v_notice, notice_updated_at = case when v_notice is null then null else app.now() end where id = p_group_id;
+end $$;
+grant execute on function public.set_group_notice(uuid, text) to authenticated;
+
+create or replace function public.get_my_group_state() returns jsonb
+language plpgsql stable security definer set search_path = public, app as $$
+declare uid uuid := auth.uid(); res jsonb;
+begin
+  if uid is null then return null; end if;
+  select jsonb_build_object(
+    'membership', (select jsonb_build_object('groupId', m.group_id, 'role', m.role, 'groupName', g.name, 'archived', g.archived_at is not null, 'notice', g.notice, 'noticeUpdatedAt', g.notice_updated_at)
+                   from public.memberships m join public.groups g on g.id = m.group_id where m.user_id = uid and m.left_at is null),
+    'pendingRequest', (select jsonb_build_object('id', j.id, 'groupId', j.group_id, 'groupName', g.name, 'targetMeters', s.target_meters, 'penalty', s.penalty)
+                       from public.join_requests j join public.groups g on g.id = j.group_id
+                       join lateral (select gs.target_meters, gs.penalty from public.group_settings gs where gs.group_id = g.id order by gs.effective_week_start desc limit 1) s on true
+                       where j.user_id = uid and j.status = 'pending'),
+    'lastRejected', (select jsonb_build_object('groupName', g.name, 'reviewedAt', j.reviewed_at)
+                     from public.join_requests j join public.groups g on g.id = j.group_id
+                     where j.user_id = uid and j.status = 'rejected' order by j.reviewed_at desc limit 1)
+  ) into res;
+  return res;
+end $$;
+
+-- ---------------------------------------------------------------------------
+-- Submit with a chosen activity date (this week's Monday .. today, KST)
+-- ---------------------------------------------------------------------------
+drop function if exists public.submit_record(text, int, text, uuid[], date);
+
+create or replace function public.submit_record(p_submission_key text, p_distance_meters int, p_memo text, p_upload_ids uuid[], p_client_date date default null, p_activity_date date default null)
+returns uuid
+language plpgsql security definer set search_path = public, app as $$
+declare
+  uid uuid := app.require_profile();
+  gid uuid;
+  v_id uuid;
+  v_today date := app.kst_today();
+  v_week_start date := app.week_start_of(app.now());
+  v_date date := coalesce(p_activity_date, v_today);
+  v_week uuid;
+  v_state public.week_state;
+  v_admin uuid;
+  v_memo text := nullif(btrim(coalesce(p_memo, '')), '');
+begin
+  if p_submission_key is null or char_length(p_submission_key) not between 8 and 64 then perform app.fail('invalid_input'); end if;
+  perform pg_advisory_xact_lock(hashtext('submit:' || uid::text || ':' || p_submission_key));
+  select id into v_id from public.running_records where user_id = uid and submission_key = p_submission_key;
+  if v_id is not null then return v_id; end if;
+
+  gid := app.my_active_group();
+  if exists (select 1 from public.groups where id = gid and archived_at is not null) then perform app.fail('group_archived'); end if;
+  if p_client_date is not null and p_client_date <> v_today then perform app.fail('date_changed'); end if;
+  if v_date > v_today or v_date < v_week_start then perform app.fail('date_out_of_week'); end if;
+  if p_distance_meters is null or p_distance_meters not between 1 and 500000 then perform app.fail('invalid_input'); end if;
+  if v_memo is not null and char_length(v_memo) > 1000 then perform app.fail('invalid_input'); end if;
+  if coalesce(array_length(p_upload_ids, 1), 0) < 1 then perform app.fail('photos_required'); end if;
+  if array_length(p_upload_ids, 1) > 5 then perform app.fail('too_many_photos'); end if;
+  perform app.rate_limit('record:' || uid::text, 30, interval '1 minute');
+
+  v_week := app.ensure_group_week(gid, v_week_start);
+  select state into v_state from public.group_weeks where id = v_week for update;
+  if v_state <> 'open' then perform app.fail('week_not_open'); end if;
+
+  insert into public.running_records (group_id, user_id, week_id, activity_date, distance_meters, memo, status, submission_key, created_at, updated_at)
+  values (gid, uid, v_week, v_date, p_distance_meters, v_memo, 'pending', p_submission_key, app.now(), app.now())
+  returning id into v_id;
+  perform app.attach_uploads(v_id, uid, gid, p_upload_ids, 0);
+  insert into public.record_reviews (record_id, actor_id, from_status, to_status, created_at) values (v_id, uid, null, 'pending', app.now());
+
+  v_admin := app.group_admin_id(gid);
+  if v_admin is not null and v_admin <> uid then
+    perform app.notify(v_admin, gid, 'record_submitted:' || v_id::text, 'record_submitted', v_id);
+  end if;
+  return v_id;
+end $$;
+grant execute on function public.submit_record(text, int, text, uuid[], date, date) to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Edit/delete window: any pending/rejected record while its week is still open
+-- ---------------------------------------------------------------------------
+create or replace function app.editable_record(p_record_id uuid, p_uid uuid) returns public.running_records
+language plpgsql security definer set search_path = public, app as $$
+declare r public.running_records%rowtype; v_state public.week_state;
+begin
+  select * into r from public.running_records where id = p_record_id for update;
+  if r.id is null then perform app.fail('not_found'); end if;
+  if r.user_id <> p_uid then perform app.fail('forbidden'); end if;
+  if r.status not in ('pending', 'rejected') then perform app.fail('invalid_status'); end if;
+  select state into v_state from public.group_weeks where id = r.week_id;
+  if v_state <> 'open' then perform app.fail('edit_window_closed'); end if;
+  return r;
+end $$;
+
+-- owner: pending/rejected in an open week. admin: any record while the week is not finalized.
+create or replace function public.delete_record(p_record_id uuid) returns setof text
+language plpgsql security definer set search_path = public, app as $$
+declare uid uuid := app.require_user(); r public.running_records%rowtype; v_state public.week_state; removed text[];
+begin
+  select * into r from public.running_records where id = p_record_id for update;
+  if r.id is null then perform app.fail('not_found'); end if;
+  if app.is_group_admin(r.group_id) then
+    select state into v_state from public.group_weeks where id = r.week_id;
+    if v_state = 'finalized' then perform app.fail('week_finalized'); end if;
+  else
+    r := app.editable_record(p_record_id, uid);
+  end if;
+  select coalesce(array_agg(storage_path), '{}') into removed from public.record_photos where record_id = r.id;
+  delete from public.running_records where id = r.id;
+  return query select unnest(removed);
+end $$;
+
+-- ===== 0010_resubmit_window.sql =====
+-- 0010_resubmit_window.sql : 반려된 기록을 검토 마감(월요일 12:00) 전까지 보강해 재제출할 수 있게 한다.
+-- 주차가 '집계 중(closing)'이어도 관리자 검토가 가능한 동안에는 본인 수정·삭제·재제출을 허용한다.
+
+create or replace function app.editable_record(p_record_id uuid, p_uid uuid) returns public.running_records
+language plpgsql security definer set search_path = public, app as $$
+declare r public.running_records%rowtype; w public.group_weeks%rowtype;
+begin
+  select * into r from public.running_records where id = p_record_id for update;
+  if r.id is null then perform app.fail('not_found'); end if;
+  if r.user_id <> p_uid then perform app.fail('forbidden'); end if;
+  if r.status not in ('pending', 'rejected') then perform app.fail('invalid_status'); end if;
+  select * into w from public.group_weeks where id = r.week_id;
+  if w.state = 'finalized' then perform app.fail('edit_window_closed'); end if;
+  if w.state = 'closing' and app.now() >= app.week_close_deadline(w.week_start) then perform app.fail('edit_window_closed'); end if;
+  return r;
+end $$;
+
+-- ===== 0011_push.sql =====
+-- 0011_push.sql : Web Push 구독, 알림 웹훅(pg_net), 발송 페이로드 RPC
+create extension if not exists pg_net with schema extensions;
+
+-- ---------------------------------------------------------------------------
+-- 환경별 설정 (마이그레이션에 값 없음; seed.sql 또는 배포 SQL로 채움)
+-- ---------------------------------------------------------------------------
+create table if not exists app.settings (
+  key text primary key,
+  value text not null
+);
+
+-- 테스트/로컬 편의: 둘 다 null이면 삭제
+create or replace function public.test_set_push_settings(p_url text, p_secret text) returns void
+language plpgsql security definer set search_path = public, app as $$
+begin
+  if p_url is null and p_secret is null then
+    delete from app.settings where key in ('push_webhook_url', 'push_webhook_secret');
+    return;
+  end if;
+  insert into app.settings (key, value) values ('push_webhook_url', p_url), ('push_webhook_secret', p_secret)
+  on conflict (key) do update set value = excluded.value;
+end $$;
+revoke execute on function public.test_set_push_settings(text, text) from public, anon, authenticated;
+grant execute on function public.test_set_push_settings(text, text) to service_role;
+
+-- ---------------------------------------------------------------------------
+-- 구독
+-- ---------------------------------------------------------------------------
+create table public.push_subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles (id) on delete cascade,
+  endpoint text not null unique,
+  p256dh text not null,
+  auth text not null,
+  user_agent text,
+  created_at timestamptz not null default now(),
+  last_used_at timestamptz
+);
+create index push_subscriptions_user_idx on public.push_subscriptions (user_id);
+
+alter table public.push_subscriptions enable row level security;
+create policy push_subscriptions_select on public.push_subscriptions for select to authenticated using (user_id = auth.uid());
+create policy push_subscriptions_delete on public.push_subscriptions for delete to authenticated using (user_id = auth.uid());
+revoke insert, update, delete, truncate on public.push_subscriptions from anon, authenticated;
+grant select, delete on public.push_subscriptions to authenticated;
+grant select, insert, update, delete on public.push_subscriptions to service_role;
+
+create or replace function public.save_push_subscription(p_endpoint text, p_p256dh text, p_auth text, p_user_agent text) returns void
+language plpgsql security definer set search_path = public, app as $$
+declare uid uuid := app.require_user();
+begin
+  if coalesce(p_endpoint, '') = '' or coalesce(p_p256dh, '') = '' or coalesce(p_auth, '') = '' then perform app.fail('invalid_input'); end if;
+  insert into public.push_subscriptions (user_id, endpoint, p256dh, auth, user_agent)
+  values (uid, p_endpoint, p_p256dh, p_auth, left(p_user_agent, 300))
+  on conflict (endpoint) do update
+    set user_id = excluded.user_id, p256dh = excluded.p256dh, auth = excluded.auth, user_agent = excluded.user_agent;
+end $$;
+grant execute on function public.save_push_subscription(text, text, text, text) to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- uid 인자 권한 함수 (auth.uid() 대신 명시 uid; 발송 경로에서 사용)
+-- ---------------------------------------------------------------------------
+create or replace function app.is_active_member(p_group_id uuid, p_uid uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.memberships m where m.group_id = p_group_id and m.user_id = p_uid and m.left_at is null);
+$$;
+create or replace function app.is_group_admin(p_group_id uuid, p_uid uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.memberships m where m.group_id = p_group_id and m.user_id = p_uid and m.left_at is null and m.role = 'admin');
+$$;
+create or replace function app.can_view_week(p_week_id uuid, p_uid uuid) returns boolean
+language sql stable security definer set search_path = public, app as $$
+  select exists (select 1 from public.group_weeks w where w.id = p_week_id and app.is_active_member(w.group_id, p_uid));
+$$;
+create or replace function app.can_view_record(p_record_id uuid, p_uid uuid) returns boolean
+language sql stable security definer set search_path = public, app as $$
+  select exists (select 1 from public.running_records r where r.id = p_record_id and app.is_active_member(r.group_id, p_uid));
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 알림 뷰 (get_notifications 와 get_push_payload 공용)
+-- ---------------------------------------------------------------------------
+create or replace function app.notification_view(n public.notifications, p_uid uuid) returns jsonb
+language sql stable security definer set search_path = public, app as $$
+  select jsonb_build_object(
+    'id', n.id, 'type', n.type, 'targetId', n.target_id, 'groupId', n.group_id, 'readAt', n.read_at, 'createdAt', n.created_at,
+    'link', case n.type
+      when 'join_request' then case when app.is_group_admin(n.group_id, p_uid) then '/admin?tab=requests' end
+      when 'join_result' then '/'
+      when 'record_submitted' then case when app.can_view_record(n.target_id, p_uid) then '/records/' || n.target_id::text end
+      when 'record_review' then case when app.can_view_record(n.target_id, p_uid) then '/records/' || n.target_id::text end
+      when 'record_expired' then case when app.can_view_record(n.target_id, p_uid) then '/records/' || n.target_id::text end
+      when 'review_reminder' then case when app.is_group_admin(n.group_id, p_uid) then '/admin?tab=reviews' end
+      when 'week_final' then case when app.can_view_week(n.target_id, p_uid) then '/?week=' || (select week_start::text from public.group_weeks where id = n.target_id) end
+    end,
+    'meta', case n.type
+      when 'join_request' then (select jsonb_build_object('nickname', p.nickname, 'groupName', g.name) from public.join_requests j join public.profiles p on p.id = j.user_id join public.groups g on g.id = j.group_id where j.id = n.target_id)
+      when 'join_result' then (select jsonb_build_object('status', j.status, 'groupName', g.name) from public.join_requests j join public.groups g on g.id = j.group_id where j.id = n.target_id)
+      when 'record_submitted' then (select jsonb_build_object('nickname', p.nickname, 'meters', r.distance_meters) from public.running_records r join public.profiles p on p.id = r.user_id where r.id = n.target_id)
+      when 'record_review' then (select jsonb_build_object('status', split_part(n.event_key, ':', 4), 'reason', rv.reason, 'meters', r.distance_meters)
+                                 from public.running_records r left join lateral (select reason from public.record_reviews x where x.record_id = r.id and x.to_status::text = split_part(n.event_key, ':', 4) order by created_at desc limit 1) rv on true
+                                 where r.id = n.target_id)
+      when 'record_expired' then (select jsonb_build_object('meters', r.distance_meters, 'date', r.activity_date) from public.running_records r where r.id = n.target_id)
+      when 'review_reminder' then jsonb_build_object('phase', split_part(n.event_key, ':', 3))
+      when 'week_final' then (select jsonb_build_object('weekStart', w.week_start, 'groupName', w.group_name_snapshot) from public.group_weeks w where w.id = n.target_id)
+      else '{}'::jsonb end
+  );
+$$;
+
+create or replace function public.get_notifications(p_limit int default 50) returns jsonb
+language plpgsql stable security definer set search_path = public, app as $$
+declare uid uuid := app.require_user(); res jsonb;
+begin
+  select coalesce(jsonb_agg(app.notification_view(n, uid) order by n.created_at desc), '[]'::jsonb)
+  into res
+  from (select * from public.notifications where user_id = uid order by created_at desc limit p_limit) n;
+  return res;
+end $$;
+
+create or replace function public.get_push_payload(p_notification_id uuid) returns jsonb
+language sql stable security definer set search_path = public, app as $$
+  select jsonb_build_object('userId', n.user_id, 'view', app.notification_view(n, n.user_id))
+  from public.notifications n where n.id = p_notification_id;
+$$;
+revoke execute on function public.get_push_payload(uuid) from public, anon, authenticated;
+grant execute on function public.get_push_payload(uuid) to service_role;
+
+-- ---------------------------------------------------------------------------
+-- 웹훅 트리거
+-- ---------------------------------------------------------------------------
+create or replace function app.push_webhook() returns trigger
+language plpgsql security definer set search_path = public, app, extensions as $$
+declare v_url text; v_secret text;
+begin
+  select value into v_url from app.settings where key = 'push_webhook_url';
+  select value into v_secret from app.settings where key = 'push_webhook_secret';
+  if v_url is null or v_secret is null then return new; end if;
+  perform net.http_post(
+    url := v_url,
+    headers := jsonb_build_object('Content-Type', 'application/json', 'x-push-secret', v_secret),
+    body := jsonb_build_object('notificationId', new.id),
+    timeout_milliseconds := 15000
+  );
+  return new;
+exception when others then
+  return new;
+end $$;
+
+create trigger notifications_push_webhook after insert on public.notifications
+for each row execute function app.push_webhook();

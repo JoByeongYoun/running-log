@@ -8,12 +8,13 @@ import { NoGroupHome } from '@/components/group/NoGroupHome';
 import { HomeHeader } from '@/components/layout/HomeHeader';
 import { WeekNav } from '@/components/dashboard/WeekNav';
 import { MyProgress } from '@/components/dashboard/MyProgress';
-import { WeekCalendar } from '@/components/dashboard/WeekCalendar';
+import { WeekTrack } from '@/components/dashboard/WeekTrack';
 import { ScrollRestore } from '@/components/dashboard/ScrollRestore';
 import { RecordForm } from '@/components/record/RecordForm';
 import { SummaryAutoShow } from '@/components/summary/SummaryAutoShow';
 import { SummaryButton } from '@/components/summary/SummaryButton';
 import { PushBanner } from '@/components/pwa/PushBanner';
+import { RejectedBanner } from '@/components/dashboard/RejectedBanner';
 import { ErrorState } from '@/components/ui/States';
 import { messageForError } from '@/lib/errors';
 
@@ -79,12 +80,13 @@ export default async function HomePage({ searchParams }: PageProps<'/'>) {
                 {!dash.data.week.isCurrent && <SummaryButton groupId={groupId} weekStart={weekStart} />}
               </div>
             </div>
+            <RejectedBanner data={dash.data} myId={session.user.id} />
             <MyProgress data={dash.data} />
-            <WeekCalendar data={dash.data} myId={session.user.id} />
+            <WeekTrack data={dash.data} myId={session.user.id} />
             {dash.data.week.isCurrent && (
               <section id="today" className="scroll-mt-16 rounded-2xl border border-slate-200 p-4">
                 <h2 className="mb-3 font-semibold">오늘의 기록 등록</h2>
-                <RecordForm today={dash.data.today} disabledReason={state.membership.archived ? '보관된 그룹에는 기록을 등록할 수 없습니다.' : undefined} />
+                <RecordForm today={dash.data.today} notice={state.membership.notice} disabledReason={state.membership.archived ? '보관된 그룹에는 기록을 등록할 수 없습니다.' : undefined} />
               </section>
             )}
           </>

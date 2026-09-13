@@ -149,4 +149,20 @@ describe('group lifecycle', () => {
     expect(byUser[m.id]).toMatchObject({ eligible: false, joined_this_week: true });
     await setFakeNow('2026-09-09T03:00:00Z');
   });
+  it('group notice: admin sets/clears it, members read it from group state', async () => {
+    const u = await createTestUser('notice-admin'); await completeProfile(u, '공지관리자');
+    const g = (await u.client.rpc('create_group', { p_name: '공지그룹', p_target_meters: 10000, p_penalty: '없음' })).data![0];
+    const m = await createTestUser('notice-member'); await completeProfile(m, '공지멤버');
+    const r = (await m.client.rpc('request_join', { p_code: g.invite_code })).data as string;
+    await u.client.rpc('review_join_request', { p_request_id: r, p_approve: true });
+    expectRpcError(await m.client.rpc('set_group_notice', { p_group_id: g.group_id, p_notice: '멤버가 씀' }), 'forbidden');
+    expect((await u.client.rpc('set_group_notice', { p_group_id: g.group_id, p_notice: '  사진은 앱 캡처로  ' })).error).toBeNull();
+    const state = (await m.client.rpc('get_my_group_state')).data as { membership: { notice: string | null; noticeUpdatedAt: string | null } };
+    expect(state.membership.notice).toBe('사진은 앱 캡처로');
+    expect(state.membership.noticeUpdatedAt).not.toBeNull();
+    expectRpcError(await u.client.rpc('set_group_notice', { p_group_id: g.group_id, p_notice: 'x'.repeat(501) }), 'invalid_input');
+    expect((await u.client.rpc('set_group_notice', { p_group_id: g.group_id, p_notice: '' })).error).toBeNull();
+    const cleared = (await m.client.rpc('get_my_group_state')).data as { membership: { notice: string | null } };
+    expect(cleared.membership.notice).toBeNull();
+  });
 });

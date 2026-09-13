@@ -26,7 +26,7 @@
 [서비스 워커] push → showNotification / notificationclick → 링크로 이동
 ```
 
-## 3. DB (`supabase/migrations/0010_push.sql`)
+## 3. DB (`supabase/migrations/0011_push.sql`)
 
 ### 3.1 테이블 `public.push_subscriptions`
 
@@ -220,7 +220,7 @@ self.addEventListener('notificationclick', (event) => {
 ## 8. 파일 목록
 
 신규:
-- `supabase/migrations/0010_push.sql`
+- `supabase/migrations/0011_push.sql`
 - `src/lib/notification-text.ts`
 - `src/lib/push/send.ts`, `src/lib/push/usePushSubscription.ts`
 - `src/app/api/push/dispatch/route.ts`

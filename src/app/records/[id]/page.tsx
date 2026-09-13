@@ -4,13 +4,14 @@ import { getSessionUser } from '@/lib/supabase/server';
 import { getGroupState } from '@/lib/group-state';
 import { signedUrls } from '@/lib/storage/signed-url';
 import { formatMeters } from '@/lib/domain/distance';
-import { kstDateOf, isValidYmd, mondayOf } from '@/lib/domain/week';
+import { isValidYmd, mondayOf, isEditWindowOpen } from '@/lib/domain/week';
 import { AppHeader } from '@/components/layout/AppHeader';
 import { Avatar } from '@/components/ui/Avatar';
 import { STATUS_LABEL } from '@/lib/dashboard/types';
 import { PhotoGallery } from '@/components/record/PhotoGallery';
 import { CommentList } from '@/components/record/CommentList';
-import { RecordOwnerActions } from '@/components/record/RecordOwnerActions';
+import { RecordOwnerActions, AdminDeleteAction } from '@/components/record/RecordOwnerActions';
+import { ReviewHistory } from '@/components/record/ReviewHistory';
 import { ReviewActions } from '@/components/admin/ReviewActions';
 
 export default async function RecordPage({ params, searchParams }: PageProps<'/records/[id]'>) {
@@ -39,9 +40,11 @@ export default async function RecordPage({ params, searchParams }: PageProps<'/r
   const last = reviews[reviews.length - 1];
   const isOwner = rec.user_id === session.user.id;
   const isAdmin = state.membership.role === 'admin';
-  const today = kstDateOf(new Date());
-  const canEdit = isOwner && (rec.status === 'pending' || rec.status === 'rejected') && rec.activity_date === today && rec.group_weeks?.state === 'open';
+  const windowOpen = Boolean(rec.group_weeks) && isEditWindowOpen(rec.group_weeks!.week_start, rec.group_weeks!.state);
+  const canEdit = isOwner && (rec.status === 'pending' || rec.status === 'rejected') && windowOpen;
   const weekFinal = rec.group_weeks?.state === 'finalized';
+  const photoItems = photos.map((p) => ({ id: p.id, url: photoUrls.get(p.storage_path) ?? '' }));
+  const editable = { id: rec.id, distance: formatMeters(rec.distance_meters), memo: rec.memo ?? '', version: rec.version, status: rec.status };
 
   const { data: comments } = await supabase
     .from('comments').select('id, user_id, body, created_at, deleted_at, profiles!comments_user_id_fkey(nickname, avatar_path)')
@@ -65,22 +68,26 @@ export default async function RecordPage({ params, searchParams }: PageProps<'/r
           </div>
           <p className="mt-3 text-3xl font-bold">{formatMeters(rec.distance_meters)} <span className="text-base font-normal text-slate-500">km</span></p>
           {rec.memo && <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">{rec.memo}</p>}
-          {rec.status === 'rejected' && last?.reason && <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">반려 사유: {last.reason}</p>}
+          {rec.status === 'rejected' && (
+            <div className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">
+              <p>반려 사유: {last?.reason ?? '(사유 없음)'}</p>
+              {isOwner && (canEdit
+                ? <p className="mt-1 text-xs text-red-600">사진이나 거리·메모를 보강한 뒤 아래 <b>수정하고 재제출</b>을 누르면 다시 검토를 요청합니다.</p>
+                : <p className="mt-1 text-xs text-red-600">검토 기한이 지나 재제출할 수 없습니다.</p>)}
+            </div>
+          )}
           {rec.status === 'pending' && last?.to_status === 'pending' && reviews.some((r) => r.to_status === 'approved') && last.reason && (
             <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-800">승인 취소됨: {last.reason}</p>
           )}
           {rec.status === 'expired' && <p className="mt-3 rounded-xl bg-slate-100 px-3 py-2 text-sm text-slate-600">검토 기한(월요일 12:00)이 지나 합계에 포함되지 않았습니다.</p>}
-          {rec.status === 'pending' && rec.version > 1 && <p className="mt-2 text-xs text-slate-500">수정된 기록입니다 (v{rec.version}).</p>}
+          {rec.status === 'pending' && rec.version > 1 && <p className="mt-2 text-xs text-slate-500">수정 후 재제출된 기록입니다 (v{rec.version}). 관리자가 다시 검토합니다.</p>}
+          <ReviewHistory reviews={reviews.map((r) => ({ id: r.id, toStatus: r.to_status, reason: r.reason, createdAt: r.created_at, byOwner: r.actor_id === rec.user_id }))} />
         </section>
 
-        <PhotoGallery photos={photos.map((p) => ({ id: p.id, url: photoUrls.get(p.storage_path) ?? '' }))} />
+        <PhotoGallery photos={photoItems} editable={canEdit ? editable : undefined} />
 
-        {canEdit && (
-          <RecordOwnerActions
-            record={{ id: rec.id, distance: formatMeters(rec.distance_meters), memo: rec.memo ?? '', version: rec.version, status: rec.status }}
-            photos={photos.map((p) => ({ id: p.id, url: photoUrls.get(p.storage_path) ?? '' }))}
-          />
-        )}
+        {canEdit && <RecordOwnerActions record={editable} photos={photoItems} />}
+        {isAdmin && !isOwner && !weekFinal && <AdminDeleteAction recordId={rec.id} nickname={rec.profiles?.nickname ?? '(이름 없음)'} />}
         {isAdmin && !weekFinal && (rec.status === 'pending' || rec.status === 'approved') && (
           <ReviewActions recordId={rec.id} status={rec.status} version={rec.version} />
         )}

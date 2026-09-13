@@ -69,13 +69,13 @@ export default async function AdminPage({ searchParams }: PageProps<'/admin'>) {
         {tab === 'members' && (
           <MemberList groupId={groupId} members={memberItems} myId={session.user.id} initialInvite={invite} siteUrl={(process.env.NEXT_PUBLIC_SITE_URL ?? '').replace(/\/+$/, '')} />
         )}
-        {tab === 'settings' && <SettingsTab groupId={groupId} name={state.membership.groupName} />}
+        {tab === 'settings' && <SettingsTab groupId={groupId} name={state.membership.groupName} notice={state.membership.notice} />}
       </main>
     </>
   );
 }
 
-async function SettingsTab({ groupId, name }: { groupId: string; name: string }) {
+async function SettingsTab({ groupId, name, notice }: { groupId: string; name: string; notice: string | null }) {
   const session = await getSessionUser();
   const thisWeek = weekStartOf(new Date());
   const { data: settings } = await session!.supabase.from('group_settings').select('effective_week_start, target_meters, penalty').eq('group_id', groupId).order('effective_week_start', { ascending: false });
@@ -84,7 +84,7 @@ async function SettingsTab({ groupId, name }: { groupId: string; name: string })
   if (!current) return null;
   return (
     <GroupSettings
-      groupId={groupId} name={name}
+      groupId={groupId} name={name} notice={notice}
       current={{ targetMeters: current.target_meters, penalty: current.penalty, weekStart: current.effective_week_start }}
       scheduled={scheduled ? { targetMeters: scheduled.target_meters, penalty: scheduled.penalty, weekStart: scheduled.effective_week_start } : null}
     />

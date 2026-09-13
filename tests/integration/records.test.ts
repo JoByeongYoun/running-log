@@ -90,11 +90,24 @@ describe('records: upload, submit, edit, review, comments', () => {
     expect((await admin.from('record_reviews').select('*').eq('record_id', own)).data).toHaveLength(2);
   });
 
-  it('edit window closes the next day', async () => {
+  it('submits for an earlier day of the current week, rejects dates outside Monday..today', async () => {
+    const ok = await m1.client.rpc('submit_record', { p_submission_key: crypto.randomUUID(), p_distance_meters: 2000, p_memo: null, p_upload_ids: await uploadEvidence(m1, 1), p_client_date: '2026-09-09', p_activity_date: '2026-09-07' });
+    expect(ok.error).toBeNull();
+    expect((await admin.from('running_records').select('activity_date, group_weeks(week_start)').eq('id', ok.data).single()).data).toMatchObject({ activity_date: '2026-09-07', group_weeks: { week_start: '2026-09-07' } });
+    const future = await m1.client.rpc('submit_record', { p_submission_key: crypto.randomUUID(), p_distance_meters: 2000, p_memo: null, p_upload_ids: await uploadEvidence(m1, 1), p_client_date: '2026-09-09', p_activity_date: '2026-09-10' });
+    expectRpcError(future, 'date_out_of_week');
+    const lastWeek = await m1.client.rpc('submit_record', { p_submission_key: crypto.randomUUID(), p_distance_meters: 2000, p_memo: null, p_upload_ids: await uploadEvidence(m1, 1), p_client_date: '2026-09-09', p_activity_date: '2026-09-06' });
+    expectRpcError(lastWeek, 'date_out_of_week');
+  });
+
+  it('admin can delete any non-finalized record; non-owner members cannot', async () => {
     const rec = (await submit(m1, 1000, await uploadEvidence(m1, 1))).data as string;
-    await setFakeNow('2026-09-10T03:00:00Z');
-    expectRpcError(await m1.client.rpc('delete_record', { p_record_id: rec }), 'edit_window_closed');
-    await setFakeNow('2026-09-09T03:00:00Z');
+    expectRpcError(await m2.client.rpc('delete_record', { p_record_id: rec }), 'forbidden');
+    expect((await owner.client.rpc('review_record', { p_record_id: rec, p_action: 'approve', p_reason: null, p_expected_version: 1 })).error).toBeNull();
+    expectRpcError(await m1.client.rpc('delete_record', { p_record_id: rec }), 'invalid_status');
+    const del = await owner.client.rpc('delete_record', { p_record_id: rec });
+    expect(del.error).toBeNull();
+    expect(del.data).toHaveLength(1);
   });
 
   it('delete returns photo paths and removes record', async () => {
@@ -118,5 +131,44 @@ describe('records: upload, submit, edit, review, comments', () => {
     // m2 leaves → cannot see comments
     await m2.client.rpc('leave_group');
     expect((await m2.client.from('comments').select('id').eq('record_id', rec)).data).toHaveLength(0);
+  });
+
+  it('edit window stays open through the closing period and closes at Monday 12:00', async () => {
+    const rec = (await submit(m1, 1000, await uploadEvidence(m1, 1))).data as string;
+    await setFakeNow('2026-09-10T03:00:00Z'); // next day, same week
+    const photos = await admin.from('record_photos').select('id').eq('record_id', rec);
+    const upd = await m1.client.rpc('update_record', { p_record_id: rec, p_distance_meters: 1500, p_memo: null, p_keep_photo_ids: photos.data!.map((p) => p.id), p_upload_ids: [], p_expected_version: 1 });
+    expect(upd.error).toBeNull();
+    await setFakeNow('2026-09-13T15:00:00Z'); // Monday 00:00 KST → previous week is closing
+    await m1.client.rpc('get_week_dashboard', { p_group_id: groupId, p_week_start: '2026-09-07' });
+    expect((await admin.from('group_weeks').select('state').eq('week_start', '2026-09-07').eq('group_id', groupId).single()).data!.state).toBe('closing');
+    // still editable while the admin can review
+    const upd2 = await m1.client.rpc('update_record', { p_record_id: rec, p_distance_meters: 1600, p_memo: null, p_keep_photo_ids: photos.data!.map((p) => p.id), p_upload_ids: [], p_expected_version: 2 });
+    expect(upd2.error).toBeNull();
+    await setFakeNow('2026-09-14T03:00:00Z'); // Monday 12:00 KST → deadline
+    expectRpcError(await m1.client.rpc('delete_record', { p_record_id: rec }), 'edit_window_closed');
+    // admin can still delete while the row is not finalized
+    const del = await owner.client.rpc('delete_record', { p_record_id: rec });
+    expect(del.error).toBeNull();
+    expect((await admin.from('running_records').select('id').eq('id', rec)).data).toHaveLength(0);
+    await setFakeNow('2026-09-09T03:00:00Z');
+  });
+
+  it('rejected record can be fixed and resubmitted while the week is closing, until Monday 12:00', async () => {
+    // use the following week (09-14) since the 09-07 week was closed by the previous test
+    await setFakeNow('2026-09-19T03:00:00Z'); // Sat 12:00 KST, week 09-14 open
+    const rec = (await submit(m1, 1000, await uploadEvidence(m1, 1))).data as string;
+    await setFakeNow('2026-09-20T22:00:00Z'); // Mon 07:00 KST → week 09-14 closing (pending remains)
+    await m1.client.rpc('get_week_dashboard', { p_group_id: groupId, p_week_start: '2026-09-14' });
+    expect((await admin.from('group_weeks').select('state').eq('week_start', '2026-09-14').eq('group_id', groupId).single()).data!.state).toBe('closing');
+    expect((await owner.client.rpc('review_record', { p_record_id: rec, p_action: 'reject', p_reason: '사진 흐림', p_expected_version: 1 })).error).toBeNull();
+    const photos = await admin.from('record_photos').select('id').eq('record_id', rec);
+    const re = await m1.client.rpc('update_record', { p_record_id: rec, p_distance_meters: 1000, p_memo: '보강', p_keep_photo_ids: photos.data!.map((p) => p.id), p_upload_ids: await uploadEvidence(m1, 1), p_expected_version: 1 });
+    expect(re.error).toBeNull();
+    expect((await admin.from('running_records').select('status, version').eq('id', rec).single()).data).toMatchObject({ status: 'pending', version: 2 });
+    expect((await owner.client.rpc('review_record', { p_record_id: rec, p_action: 'reject', p_reason: '아직 흐림', p_expected_version: 2 })).error).toBeNull();
+    await setFakeNow('2026-09-21T03:00:00Z'); // Mon 12:00 KST → deadline passed
+    expectRpcError(await m1.client.rpc('update_record', { p_record_id: rec, p_distance_meters: 1000, p_memo: null, p_keep_photo_ids: photos.data!.map((p) => p.id), p_upload_ids: [], p_expected_version: 2 }), 'edit_window_closed');
+    await setFakeNow('2026-09-09T03:00:00Z');
   });
 });

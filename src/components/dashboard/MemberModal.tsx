@@ -1,6 +1,9 @@
 'use client';
+import { useState } from 'react';
 import Link from 'next/link';
+import { PhotoLightbox } from '@/components/record/PhotoLightbox';
 import { formatMeters } from '@/lib/domain/distance';
+import { RankBadge } from './RankBadge';
 import { Avatar } from '@/components/ui/Avatar';
 import { Modal } from '@/components/ui/Modal';
 import { OUTCOME_LABEL, STATUS_LABEL, type MemberRow, type Outcome, type WeekDashboard } from '@/lib/dashboard/types';
@@ -20,6 +23,7 @@ type Props = { member: MemberRow | null; data: WeekDashboard; isMe: boolean; onC
 
 export function MemberModal({ member, data, isMe, onClose }: Props) {
   const m = member;
+  const [avatarOpen, setAvatarOpen] = useState(false);
   const target = data.week.targetMeters;
   const approved = m?.approvedMeters ?? 0;
   const pending = m?.pendingMeters ?? 0;
@@ -48,13 +52,17 @@ export function MemberModal({ member, data, isMe, onClose }: Props) {
               <div className="relative shrink-0">
                 <div className="rounded-full bg-gradient-to-tr from-amber-300 via-white to-emerald-300 p-[3px] shadow-lg shadow-black/20">
                   <div className="rounded-full bg-slate-900 p-[2px]">
-                    <Avatar src={m.avatarUrl ?? null} name={m.nickname} size={72} />
+                    {m.avatarUrl ? (
+                      <button type="button" onClick={() => setAvatarOpen(true)} aria-label={`${m.nickname} 프로필 사진 확대`} className="block rounded-full">
+                        <Avatar src={m.avatarUrl} name={m.nickname} size={72} />
+                      </button>
+                    ) : (
+                      <Avatar src={null} name={m.nickname} size={72} />
+                    )}
                   </div>
                 </div>
                 {m.rank != null && (
-                  <span className="absolute -bottom-1 -right-1 flex h-7 min-w-7 items-center justify-center rounded-full bg-amber-400 px-1.5 text-xs font-bold text-slate-900 shadow ring-2 ring-slate-900">
-                    {m.rank}위
-                  </span>
+                  <span className="absolute -bottom-1 -right-1"><RankBadge rank={m.rank} size="lg" suffix="위" /></span>
                 )}
               </div>
               <div className="min-w-0 flex-1">
@@ -154,6 +162,9 @@ export function MemberModal({ member, data, isMe, onClose }: Props) {
               )}
             </div>
           </div>
+          {m.avatarUrl && (
+            <PhotoLightbox photos={[{ id: m.userId, url: m.avatarUrl }]} label={`${m.nickname} 프로필 사진`} index={avatarOpen ? 0 : null} onChange={(i) => setAvatarOpen(i !== null)} />
+          )}
         </div>
       )}
     </Modal>
