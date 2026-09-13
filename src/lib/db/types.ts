@@ -758,6 +758,7 @@ export type Database = {
       app_now: { Args: never; Returns: string }
       app_week_close_deadline: { Args: { p: string }; Returns: string }
       app_week_start_of: { Args: { p: string }; Returns: string }
+      app_week_submit_deadline: { Args: { p: string }; Returns: string }
       cancel_join_request: {
         Args: { p_request_id: string }
         Returns: undefined

@@ -133,19 +133,19 @@ describe('records: upload, submit, edit, review, comments', () => {
     expect((await m2.client.from('comments').select('id').eq('record_id', rec)).data).toHaveLength(0);
   });
 
-  it('edit window stays open through the closing period and closes at Monday 12:00', async () => {
+  it('edit window stays open through the closing period and closes at Tuesday 12:00', async () => {
     const rec = (await submit(m1, 1000, await uploadEvidence(m1, 1))).data as string;
     await setFakeNow('2026-09-10T03:00:00Z'); // next day, same week
     const photos = await admin.from('record_photos').select('id').eq('record_id', rec);
     const upd = await m1.client.rpc('update_record', { p_record_id: rec, p_distance_meters: 1500, p_memo: null, p_keep_photo_ids: photos.data!.map((p) => p.id), p_upload_ids: [], p_expected_version: 1 });
     expect(upd.error).toBeNull();
-    await setFakeNow('2026-09-13T15:00:00Z'); // Monday 00:00 KST → previous week is closing
+    await setFakeNow('2026-09-14T15:00:00Z'); // Tuesday 00:00 KST → previous week is closing
     await m1.client.rpc('get_week_dashboard', { p_group_id: groupId, p_week_start: '2026-09-07' });
     expect((await admin.from('group_weeks').select('state').eq('week_start', '2026-09-07').eq('group_id', groupId).single()).data!.state).toBe('closing');
     // still editable while the admin can review
     const upd2 = await m1.client.rpc('update_record', { p_record_id: rec, p_distance_meters: 1600, p_memo: null, p_keep_photo_ids: photos.data!.map((p) => p.id), p_upload_ids: [], p_expected_version: 2 });
     expect(upd2.error).toBeNull();
-    await setFakeNow('2026-09-14T03:00:00Z'); // Monday 12:00 KST → deadline
+    await setFakeNow('2026-09-15T03:00:00Z'); // Tuesday 12:00 KST → deadline
     expectRpcError(await m1.client.rpc('delete_record', { p_record_id: rec }), 'edit_window_closed');
     // admin can still delete while the row is not finalized
     const del = await owner.client.rpc('delete_record', { p_record_id: rec });
@@ -154,11 +154,11 @@ describe('records: upload, submit, edit, review, comments', () => {
     await setFakeNow('2026-09-09T03:00:00Z');
   });
 
-  it('rejected record can be fixed and resubmitted while the week is closing, until Monday 12:00', async () => {
+  it('rejected record can be fixed and resubmitted while the week is closing, until Tuesday 12:00', async () => {
     // use the following week (09-14) since the 09-07 week was closed by the previous test
     await setFakeNow('2026-09-19T03:00:00Z'); // Sat 12:00 KST, week 09-14 open
     const rec = (await submit(m1, 1000, await uploadEvidence(m1, 1))).data as string;
-    await setFakeNow('2026-09-20T22:00:00Z'); // Mon 07:00 KST → week 09-14 closing (pending remains)
+    await setFakeNow('2026-09-21T22:00:00Z'); // Tue 07:00 KST → week 09-14 closing (pending remains)
     await m1.client.rpc('get_week_dashboard', { p_group_id: groupId, p_week_start: '2026-09-14' });
     expect((await admin.from('group_weeks').select('state').eq('week_start', '2026-09-14').eq('group_id', groupId).single()).data!.state).toBe('closing');
     expect((await owner.client.rpc('review_record', { p_record_id: rec, p_action: 'reject', p_reason: '사진 흐림', p_expected_version: 1 })).error).toBeNull();
@@ -167,7 +167,7 @@ describe('records: upload, submit, edit, review, comments', () => {
     expect(re.error).toBeNull();
     expect((await admin.from('running_records').select('status, version').eq('id', rec).single()).data).toMatchObject({ status: 'pending', version: 2 });
     expect((await owner.client.rpc('review_record', { p_record_id: rec, p_action: 'reject', p_reason: '아직 흐림', p_expected_version: 2 })).error).toBeNull();
-    await setFakeNow('2026-09-21T03:00:00Z'); // Mon 12:00 KST → deadline passed
+    await setFakeNow('2026-09-22T03:00:00Z'); // Tue 12:00 KST → deadline passed
     expectRpcError(await m1.client.rpc('update_record', { p_record_id: rec, p_distance_meters: 1000, p_memo: null, p_keep_photo_ids: photos.data!.map((p) => p.id), p_upload_ids: [], p_expected_version: 2 }), 'edit_window_closed');
     await setFakeNow('2026-09-09T03:00:00Z');
   });

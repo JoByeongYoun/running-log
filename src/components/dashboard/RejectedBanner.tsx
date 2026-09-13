@@ -14,7 +14,7 @@ export function RejectedBanner({ data, myId }: { data: WeekDashboard; myId: stri
   return (
     <section role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-3">
       <p className="text-sm font-semibold text-red-700">반려된 기록 {rejected.length}건</p>
-      <p className="mt-0.5 text-xs text-red-600">사진이나 내용을 보강한 뒤 재제출하면 관리자가 다시 검토합니다. {data.week.state === 'closing' ? '월요일 12:00까지 가능합니다.' : ''}</p>
+      <p className="mt-0.5 text-xs text-red-600">사진이나 내용을 보강한 뒤 재제출하면 관리자가 다시 검토합니다. {data.week.state === 'closing' ? '화요일 12:00까지 가능합니다.' : ''}</p>
       <ul className="mt-2 space-y-1">
         {rejected.map((r) => (
           <li key={r.id}>

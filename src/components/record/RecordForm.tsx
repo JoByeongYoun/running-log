@@ -8,13 +8,13 @@ import { FormMessage } from '@/components/ui/FormMessage';
 import { useToast } from '@/components/ui/Toast';
 import { PhotoPicker } from './PhotoPicker';
 import { usePhotoUploads } from './usePhotoUploads';
-import { addDays, kstDateOf, mondayOf } from '@/lib/domain/week';
+import { addDays, earliestSelectableDate, kstDateOf } from '@/lib/domain/week';
 
 const DOW = ['일', '월', '화', '수', '목', '금', '토'];
 
-/** 이번 주 월요일부터 오늘까지의 날짜 목록 (오늘이 마지막) */
-export function selectableDates(today: string): string[] {
-  const start = mondayOf(today);
+/** 이번 주 월요일부터 오늘까지의 날짜 목록 (오늘이 마지막). 월요일에는 지난주 월~일도 포함한다 */
+export function selectableDates(today: string, now: Date = new Date()): string[] {
+  const start = earliestSelectableDate(today, now);
   const out: string[] = [];
   for (let d = start; d <= today; d = addDays(d, 1)) out.push(d);
   return out;
@@ -37,6 +37,7 @@ export function RecordForm({ today, notice, disabledReason }: { today: string; n
   const router = useRouter();
   const toast = useToast();
   const dates = selectableDates(today);
+  const includesLastWeek = dates.length > 7;
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -80,7 +81,7 @@ export function RecordForm({ today, notice, disabledReason }: { today: string; n
         >
           {dates.map((d) => <option key={d} value={d}>{labelOf(d, today)}</option>)}
         </select>
-        <p className="text-xs text-slate-500">이번 주 월요일부터 오늘까지 선택할 수 있습니다.</p>
+        <p className="text-xs text-slate-500">{includesLastWeek ? '지난주 기록은 오늘(월요일)까지 올릴 수 있습니다.' : '이번 주 월요일부터 오늘까지 선택할 수 있습니다.'}</p>
       </div>
       <Input label="거리 (km)" value={distance} onChange={(e) => setDistance(e.target.value)} inputMode="decimal" placeholder="예: 5.25" required hint="0.01 ~ 500km, 소수 둘째 자리까지" />
       <PhotoPicker photos={photos} onAdd={add} onRemove={remove} onMove={move} onRetry={retry} disabled={pending} />

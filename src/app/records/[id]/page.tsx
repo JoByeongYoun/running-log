@@ -79,7 +79,7 @@ export default async function RecordPage({ params, searchParams }: PageProps<'/r
           {rec.status === 'pending' && last?.to_status === 'pending' && reviews.some((r) => r.to_status === 'approved') && last.reason && (
             <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-800">승인 취소됨: {last.reason}</p>
           )}
-          {rec.status === 'expired' && <p className="mt-3 rounded-xl bg-slate-100 px-3 py-2 text-sm text-slate-600">검토 기한(월요일 12:00)이 지나 합계에 포함되지 않았습니다.</p>}
+          {rec.status === 'expired' && <p className="mt-3 rounded-xl bg-slate-100 px-3 py-2 text-sm text-slate-600">검토 기한(화요일 12:00)이 지나 합계에 포함되지 않았습니다.</p>}
           {rec.status === 'pending' && rec.version > 1 && <p className="mt-2 text-xs text-slate-500">수정 후 재제출된 기록입니다 (v{rec.version}). 관리자가 다시 검토합니다.</p>}
           <ReviewHistory reviews={reviews.map((r) => ({ id: r.id, toStatus: r.to_status, reason: r.reason, createdAt: r.created_at, byOwner: r.actor_id === rec.user_id }))} />
         </section>

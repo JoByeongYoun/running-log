@@ -17,7 +17,7 @@ export function notificationText(n: NotificationView): string {
       return `${m.meters ? formatMeters(Number(m.meters)) + 'km ' : ''}기록이 ${s}.`;
     }
     case 'record_expired': return `${m.date ?? ''} ${m.meters ? formatMeters(Number(m.meters)) + 'km ' : ''}기록이 검토 기한 만료로 합계에서 제외되었습니다.`;
-    case 'review_reminder': return m.phase === '11' ? '지난주 기록 검토 마감이 1시간 남았습니다 (12:00).' : '지난주 검토가 남아 있습니다. 월요일 12:00까지 처리하세요.';
+    case 'review_reminder': return m.phase === '11' ? '지난주 기록 검토 마감이 1시간 남았습니다 (12:00).' : '지난주 검토가 남아 있습니다. 화요일 12:00까지 처리하세요.';
     case 'week_final': return `${m.weekStart ? formatWeekRange(String(m.weekStart)) + ' ' : ''}주간 결과가 확정되었습니다.`;
     default: return '알림';
   }
