@@ -6,7 +6,7 @@ export const SW_SOURCE = String.raw`
  * - update: waits until the page asks (no auto skipWaiting)
  * - push: show notification, click → focus/open url */
 const VERSION = self.__SW_VERSION__ || 'dev';
-const STATIC_CACHE = \`static-\${VERSION}\`;
+const STATIC_CACHE = 'static-' + VERSION;
 const PRECACHE = ['/offline', '/icons/icon-192.png', '/icons/icon-512.png', '/manifest.webmanifest'];
 
 self.addEventListener('install', (event) => {
