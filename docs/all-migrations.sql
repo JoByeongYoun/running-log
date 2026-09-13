@@ -1424,6 +1424,19 @@ grant execute on function public.get_unread_count(), public.mark_notifications_r
   public.get_week_summary(uuid, date), public.claim_summary_auto_show() to authenticated;
 
 
+-- ===== 0008_realtime.sql =====
+-- 0008_realtime.sql : 화면 자동 갱신용 Realtime publication.
+-- 클라이언트는 postgres_changes 이벤트를 받으면 router.refresh()만 호출한다.
+-- 이벤트 페이로드는 각 테이블의 RLS select 정책을 통과한 행만 전달된다.
+alter publication supabase_realtime add table
+  public.running_records,
+  public.record_reviews,
+  public.comments,
+  public.notifications,
+  public.join_requests,
+  public.memberships,
+  public.group_weeks;
+
 -- ===== 0009_date_delete_notice.sql =====
 -- 0009_date_delete_notice.sql : 기록 날짜 선택(이번 주 월요일~오늘), 진행 중 주차 내 수정·삭제, 관리자 삭제, 그룹 공지사항
 
