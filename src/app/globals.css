@@ -17,3 +17,21 @@ body {
   padding-bottom: var(--safe-bottom);
 }
 input, textarea, select, button { font: inherit; }
+
+/* ── 주간 트랙 (WeekTrack) ─────────────────────────────── */
+.track-seg-pending {
+  background-image: repeating-linear-gradient(135deg, #fbbf24 0 5px, #fde68a 5px 10px);
+}
+.track-overrun {
+  background-image: repeating-linear-gradient(135deg, transparent 0 4px, rgba(148, 163, 184, 0.25) 4px 6px);
+}
+@keyframes track-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+.track-bob {
+  animation: track-bob 1.4s ease-in-out 1s infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .track-bob { animation: none; }
+}
