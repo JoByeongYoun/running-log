@@ -62,7 +62,7 @@ describe('weekly dashboard', () => {
   });
 
   it('reading the dashboard reconciles weeks even if cron never ran', async () => {
-    await setFakeNow('2026-09-14T04:00:00Z'); // next Monday 13:00 KST (past deadline)
+    await setFakeNow('2026-09-15T04:00:00Z'); // next Tuesday 13:00 KST (past deadline)
     const cur = await users[0].client.rpc('get_week_dashboard', { p_group_id: groupId, p_week_start: '2026-09-14' });
     expect(cur.error).toBeNull();
     const prev = await users[0].client.rpc('get_week_dashboard', { p_group_id: groupId, p_week_start: '2026-09-07' });

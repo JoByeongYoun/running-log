@@ -31,29 +31,36 @@ describe('weekly closing and finalization', () => {
     expect(rows.data).toHaveLength(3);
   });
 
-  it('Sunday record pending → Monday 00:30 closing with one reminder; 11:30 second reminder', async () => {
+  it('Sunday record pending → week stays open through Monday; Tuesday 00:30 closing with one reminder; 11:30 second reminder', async () => {
     await setFakeNow('2026-09-13T14:00:00Z'); // Sunday 23:00 KST
     recA = (await submit(ctx.a, 12000, await uploadEvidence(ctx.a, 1))).data as string;
-    recB = (await submit(ctx.b, 4000, await uploadEvidence(ctx.b, 1))).data as string;
-    await setFakeNow('2026-09-13T15:30:00Z'); // Monday 00:30 KST
+    await setFakeNow('2026-09-14T10:00:00Z'); // Monday 19:00 KST → last week still open, Sunday's run can be submitted
+    await admin.rpc('run_week_maintenance');
+    expect((await admin.from('group_weeks').select('state').eq('id', ctx.weekId).single()).data!.state).toBe('open');
+    expect((await admin.from('group_weeks').select('id').eq('group_id', ctx.groupId).eq('week_start', '2026-09-14')).data).toHaveLength(1);
+    recB = (await submit(ctx.b, 4000, await uploadEvidence(ctx.b, 1), undefined, '2026-09-13')).data as string;
+    expect((await admin.from('running_records').select('week_id, activity_date').eq('id', recB).single()).data).toMatchObject({ week_id: ctx.weekId, activity_date: '2026-09-13' });
+    // Monday's own record (no date) goes to the new week
+    const mon = (await submit(ctx.a, 1000, await uploadEvidence(ctx.a, 1))).data as string;
+    expect((await admin.from('running_records').select('week_id').eq('id', mon).single()).data!.week_id).not.toBe(ctx.weekId);
+    // two weeks back is not allowed
+    expectRpcError(await submit(ctx.a, 1000, await uploadEvidence(ctx.a, 1), undefined, '2026-09-06'), 'date_out_of_week');
+    await setFakeNow('2026-09-14T15:30:00Z'); // Tuesday 00:30 KST
     await admin.rpc('run_week_maintenance');
     await admin.rpc('run_week_maintenance');
     expect((await admin.from('group_weeks').select('state').eq('id', ctx.weekId).single()).data!.state).toBe('closing');
     const rem = await admin.from('notifications').select('event_key').eq('user_id', ctx.owner.id).like('event_key', 'review_reminder:%');
     expect(rem.data!.map((r) => r.event_key.slice(-3))).toEqual([':00']);
-    // new week exists for dashboard
-    expect((await admin.from('group_weeks').select('id').eq('group_id', ctx.groupId).eq('week_start', '2026-09-14')).data).toHaveLength(1);
-    await setFakeNow('2026-09-14T02:30:00Z'); // Monday 11:30 KST
+    // last week can no longer be submitted on Tuesday
+    expectRpcError(await submit(ctx.a, 1000, await uploadEvidence(ctx.a, 1), undefined, '2026-09-13'), 'date_out_of_week');
+    await setFakeNow('2026-09-15T02:30:00Z'); // Tuesday 11:30 KST
     await admin.rpc('run_week_maintenance');
     const rem2 = await admin.from('notifications').select('event_key').eq('user_id', ctx.owner.id).like('event_key', 'review_reminder:%');
     expect(rem2.data).toHaveLength(2);
-    // new submissions go to the new week, not the closing one
-    const mon = (await submit(ctx.a, 1000, await uploadEvidence(ctx.a, 1))).data as string;
-    expect((await admin.from('running_records').select('week_id').eq('id', mon).single()).data!.week_id).not.toBe(ctx.weekId);
   });
 
   it('11:59 approval of Sunday record counts for last week; last pending processed → immediate finalize', async () => {
-    await setFakeNow('2026-09-14T02:59:00Z'); // Monday 11:59 KST
+    await setFakeNow('2026-09-15T02:59:00Z'); // Tuesday 11:59 KST
     expect((await ctx.owner.client.rpc('review_record', { p_record_id: recA, p_action: 'approve', p_reason: null, p_expected_version: 1 })).error).toBeNull();
     expect((await admin.from('group_weeks').select('state').eq('id', ctx.weekId).single()).data!.state).toBe('closing');
     expect((await ctx.owner.client.rpc('review_record', { p_record_id: recB, p_action: 'reject', p_reason: '사진 불명확', p_expected_version: 1 })).error).toBeNull();
@@ -71,11 +78,11 @@ describe('weekly closing and finalization', () => {
     expectRpcError(await ctx.owner.client.rpc('review_record', { p_record_id: recA, p_action: 'unapprove', p_reason: 'x', p_expected_version: 1 }), 'week_finalized');
   });
 
-  it('12:00 deadline expires pending records and finalizes; 0km eligible members fail', async () => {
+  it('Tuesday 12:00 deadline expires pending records and finalizes; 0km eligible members fail', async () => {
     // week of 09-14: b submits Sunday, nobody reviews
     await setFakeNow('2026-09-20T10:00:00Z');
     const rec = (await submit(ctx.b, 20000, await uploadEvidence(ctx.b, 1))).data as string;
-    await setFakeNow('2026-09-21T03:00:00Z'); // Monday 12:00 KST
+    await setFakeNow('2026-09-22T03:00:00Z'); // Tuesday 12:00 KST
     // approval attempt at deadline is refused
     expectRpcError(await ctx.owner.client.rpc('review_record', { p_record_id: rec, p_action: 'approve', p_reason: null, p_expected_version: 1 }), 'review_closed');
     const res = await admin.rpc('run_week_maintenance');
@@ -96,7 +103,7 @@ describe('weekly closing and finalization', () => {
     // tie ranking 1,2,2,4 via dashboard is covered in dashboard tests
     // archive: everyone leaves
     await ctx.a.client.rpc('leave_group'); await ctx.b.client.rpc('leave_group'); await ctx.owner.client.rpc('leave_group');
-    await setFakeNow('2026-09-28T03:00:00Z');
+    await setFakeNow('2026-09-29T03:00:00Z'); // Tuesday 12:00 KST
     const r = await admin.rpc('run_week_maintenance');
     expect(r.data.finalized).toBe(1);
     expect(r.data.createdWeeks).toBe(0);
