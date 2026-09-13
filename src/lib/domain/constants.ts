@@ -11,5 +11,6 @@ export const PENALTY_MIN = 1;
 export const PENALTY_MAX = 500;
 export const MEMO_MAX = 1000;
 export const COMMENT_MAX = 1000;
-export const SIGNED_URL_TTL_SECONDS = 60;
+// 아바타 서명 URL 만료. 탭 복귀·라우터 캐시 재사용 시 이미지가 지연 로드되므로 짧으면 일괄 깨진다.
+export const SIGNED_URL_TTL_SECONDS = 60 * 60;
 export const TZ = 'Asia/Seoul';
