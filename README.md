@@ -14,6 +14,7 @@
 | `src/actions` | Server Actions: 입력 검증(zod) → `rpc` |
 | `src/app` | 화면 (`/`, `/admin`, `/records/[id]`, `/notifications`, `/profile`, `/join/[code]`, `/groups/new`, `/onboarding`, 인증) |
 | `src/app/api/cron/weekly` | 주간 유지보수 엔드포인트 (`CRON_SECRET`) |
+| `src/app/api/push/dispatch` | 알림 insert 웹훅 → Web Push 발송 (`PUSH_WEBHOOK_SECRET`) |
 | `src/app/sw.js` | 서비스 워커 (정적 자산만 캐시, 개인화 응답 미캐시, 수동 업데이트) |
 | `tests/unit`, `tests/integration`, `tests/e2e` | Vitest 단위·통합(로컬 Supabase), Playwright 핵심 흐름 |
 
@@ -35,6 +36,7 @@ npm run dev
 
 - 이메일 확인/재설정 메일은 Mailpit `http://127.0.0.1:54324` 에서 확인.
 - 데모 데이터: `npx tsx scripts/seed-demo.ts` (관리자 `demo-admin@local.test` / `password-1234`).
+- 푸시 알림은 production 빌드에서만 동작한다(서비스 워커가 개발 모드에서 등록되지 않음). `npm run build && npm start`로 확인. 로컬 DB의 웹훅 URL은 `seed.sql`이 `host.docker.internal:3000`으로 넣는다.
 
 ## 검증
 
@@ -55,5 +57,9 @@ npm run test:e2e          # Playwright: 가입→그룹→초대→기록→승�
 | `SUPABASE_SECRET_KEY` | 서버 전용 비밀 키 (`sb_secret_...` 또는 service_role). 클라이언트에 절대 노출 금지 |
 | `CRON_SECRET` | `/api/cron/weekly` Bearer 토큰 |
 | `NEXT_PUBLIC_SITE_URL` | 이메일 링크·초대 링크 기준 URL |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | Web Push 공개 키 (`npx web-push generate-vapid-keys`) |
+| `VAPID_PRIVATE_KEY` | Web Push 비밀 키. 클라이언트 노출 금지 |
+| `VAPID_SUBJECT` | `mailto:` 형식 연락처 |
+| `PUSH_WEBHOOK_SECRET` | `/api/push/dispatch` 인증. DB `app.settings.push_webhook_secret`과 동일해야 함 |
 
 배포 절차, Supabase Auth 설정, Cron 요금제 선택, 장애 시 수동 재실행은 `docs/deploy.md` 참고.

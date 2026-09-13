@@ -8,6 +8,8 @@
 | Vercel 프로젝트 | GitHub 저장소 연결. 요금제 결정(아래 4절) |
 | 운영 도메인 | 예: `https://run.example.com` |
 | `CRON_SECRET` | `openssl rand -hex 32` |
+| VAPID 키 | `npx web-push generate-vapid-keys` 출력 2개 |
+| `PUSH_WEBHOOK_SECRET` | `openssl rand -hex 32` |
 
 ## 1. 마이그레이션 적용
 
@@ -27,7 +29,7 @@ supabase db push                      # supabase/migrations 만 적용. seed.sql
 
 ## 3. Vercel 환경 변수
 
-Preview 환경에는 개발 Supabase, Production 환경에는 운영 Supabase 값을 넣는다. 5개 변수 모두 필요 (README 표). `NEXT_PUBLIC_SITE_URL`은 Production에 운영 도메인, Preview에는 비워두지 말고 미리보기 도메인 패턴 대신 `https://<project>.vercel.app`을 넣는다.
+Preview 환경에는 개발 Supabase, Production 환경에는 운영 Supabase 값을 넣는다. 9개 변수 모두 필요 (README 표). `NEXT_PUBLIC_SITE_URL`은 Production에 운영 도메인, Preview에는 비워두지 말고 미리보기 도메인 패턴 대신 `https://<project>.vercel.app`을 넣는다.
 
 ## 4. 예약 작업 (스펙 12절, 목표 5분 간격)
 
@@ -53,6 +55,17 @@ curl -H "Authorization: Bearer $CRON_SECRET" https://<도메인>/api/cron/weekly
 ```
 로그에는 시작·종료 시각과 영향 주차 ID만 남는다. 비밀 키·서명 URL·사진은 기록하지 않는다.
 
+## 4-1. Web Push 웹훅
+
+Dashboard → Database → Extensions 에서 `pg_net` 이 켜져 있는지 확인(마이그레이션이 켜지만 권한상 실패하면 수동으로 켠다). SQL:
+```sql
+insert into app.settings (key, value) values
+  ('push_webhook_url', 'https://<도메인>/api/push/dispatch'),
+  ('push_webhook_secret', '<PUSH_WEBHOOK_SECRET>')
+on conflict (key) do update set value = excluded.value;
+```
+확인: 알림이 생기는 동작(기록 제출) 후 `select status_code, error_msg from net._http_response order by created desc limit 5;` 가 200.
+
 ## 5. 배포 후 확인
 
 1. 가입 → 확인 메일 → 온보딩 → 그룹 생성 → 초대 링크 → 두 번째 계정 참여 요청 → 승인.
@@ -60,6 +73,7 @@ curl -H "Authorization: Bearer $CRON_SECRET" https://<도메인>/api/cron/weekly
 3. `curl` 로 cron 엔드포인트 200 확인, `app.maintenance_runs` 행 생성 확인.
 4. 모바일: Android Chrome 설치 배너, iOS Safari 홈 화면 추가 안내, standalone 실행, 비행기 모드에서 `/offline` 표시.
 5. DevTools → Application → Cache Storage에 `/`나 API 응답이 없는지 확인 (정적 자산만 있어야 함).
+6. Android Chrome과 iOS(홈 화면 설치 후)에서 프로필 → 푸시 알림 켜기 → 다른 계정으로 기록 제출 → 알림 수신 확인.
 
 ## 6. 미리보기 정리
 
