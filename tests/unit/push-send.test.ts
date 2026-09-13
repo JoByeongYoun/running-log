@@ -48,7 +48,16 @@ describe('sendToUser', () => {
   it('reports unconfigured when a VAPID variable is missing', async () => {
     delete process.env.VAPID_PRIVATE_KEY;
     vi.resetModules();
-    const { isPushConfigured } = await import('@/lib/push/send');
+    const { isPushConfigured, sendToUser } = await import('@/lib/push/send');
     expect(isPushConfigured()).toBe(false);
+
+    const mockFrom = vi.fn();
+    const admin = {
+      from: mockFrom,
+    } as never;
+    const result = await sendToUser(admin, 'u1', { title: 't', body: 'b', url: '/', tag: 'n1' });
+    expect(result).toEqual({ sent: 0, removed: 0, failed: 0 });
+    expect(sendNotification).not.toHaveBeenCalled();
+    expect(mockFrom).not.toHaveBeenCalled();
   });
 });
