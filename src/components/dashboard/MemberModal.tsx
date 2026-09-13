@@ -19,11 +19,6 @@ const OUTCOME_STYLE: Record<Outcome, string> = {
   not_evaluated: 'bg-white/70 text-slate-500 ring-black/5',
 };
 
-/** 주간이 아직 열려 있을 때는 '실패 예정' 대신 부드러운 표현으로 보여준다. */
-const OPEN_WEEK_LABEL: Partial<Record<Outcome, string>> = {
-  provisional_success: '목표 달성 · 잠정',
-  provisional_fail: '진행 중',
-};
 
 type Props = { member: MemberRow | null; data: WeekDashboard; isMe: boolean; onClose: () => void };
 
@@ -42,7 +37,8 @@ export function MemberModal({ member, data, isMe, onClose }: Props) {
   const bestDay = m?.days.reduce((best, d) => (d.approvedMeters > (best?.approvedMeters ?? 0) ? d : best), null as null | MemberRow['days'][number]) ?? null;
   const records = m?.days.flatMap((d) => d.records.map((r) => ({ ...r, date: d.date }))) ?? [];
   const backParam = `?week=${data.week.weekStart}&from=home`;
-  const outcomeLabel = m ? (m.joinedThisWeek ? '준비 주간' : OPEN_WEEK_LABEL[m.outcome] ?? OUTCOME_LABEL[m.outcome]) : '';
+  const finalized = data.week.state === 'finalized';
+  const outcomeLabel = m ? (m.joinedThisWeek ? '준비 주간' : finalized ? OUTCOME_LABEL[m.outcome] : '') : '';
   const outcomeKey: Outcome = m ? (m.joinedThisWeek ? 'not_evaluated' : m.outcome) : 'not_evaluated';
 
   return (
@@ -78,9 +74,8 @@ export function MemberModal({ member, data, isMe, onClose }: Props) {
                 </p>
                 <p className="mt-0.5 text-xs text-slate-500">{data.week.groupName} · {data.week.weekStart} 주</p>
                 <div className="mt-2 flex flex-wrap gap-1.5">
-                  <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ${OUTCOME_STYLE[outcomeKey]}`}>{outcomeLabel}</span>
+                  {outcomeLabel && <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ${OUTCOME_STYLE[outcomeKey]}`}>{outcomeLabel}</span>}
                   {(m.leftDuringWeek || !m.activeNow) && <span className="rounded-full bg-white/70 px-2 py-0.5 text-[11px] text-slate-500 ring-1 ring-black/5">탈퇴</span>}
-                  {data.week.state === 'closing' && !m.joinedThisWeek && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] text-amber-800 ring-1 ring-amber-200">집계 중</span>}
                 </div>
               </div>
             </div>

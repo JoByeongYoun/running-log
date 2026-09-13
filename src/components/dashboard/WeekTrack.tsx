@@ -46,7 +46,6 @@ export function WeekTrack({ data, myId }: { data: WeekDashboard; myId: string })
           <span aria-hidden>🏁</span> 주간 트랙
         </h2>
         <div className="flex items-center gap-1.5">
-          {data.provisional && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">{data.week.state === 'closing' ? '집계 중' : '잠정'}</span>}
           <span className="rounded-full bg-slate-900 px-2 py-0.5 text-xs font-medium text-white">목표 {formatMeters(data.week.targetMeters)} km</span>
         </div>
       </div>
