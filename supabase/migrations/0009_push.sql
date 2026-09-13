@@ -41,6 +41,7 @@ create index push_subscriptions_user_idx on public.push_subscriptions (user_id);
 alter table public.push_subscriptions enable row level security;
 create policy push_subscriptions_select on public.push_subscriptions for select to authenticated using (user_id = auth.uid());
 create policy push_subscriptions_delete on public.push_subscriptions for delete to authenticated using (user_id = auth.uid());
+revoke insert, update, delete, truncate on public.push_subscriptions from anon, authenticated;
 grant select, delete on public.push_subscriptions to authenticated;
 grant select, insert, update, delete on public.push_subscriptions to service_role;
 
