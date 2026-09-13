@@ -66,6 +66,8 @@ on conflict (key) do update set value = excluded.value;
 ```
 확인: 알림이 생기는 동작(기록 제출) 후 `select status_code, error_msg from net._http_response order by created desc limit 5;` 가 200.
 
+`net._http_response`에 타임아웃(15초) 행이 보여도 반드시 발송 실패를 뜻하지는 않는다 — Vercel 콜드 스타트로 요청 자체는 처리됐지만 응답이 늦게 왔을 수 있다. 설계상 푸시는 재시도하지 않으며, 실패해도 앱 내 알림은 그대로 남는다.
+
 ## 5. 배포 후 확인
 
 1. 가입 → 확인 메일 → 온보딩 → 그룹 생성 → 초대 링크 → 두 번째 계정 참여 요청 → 승인.

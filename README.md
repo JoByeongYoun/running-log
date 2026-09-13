@@ -36,7 +36,7 @@ npm run dev
 
 - 이메일 확인/재설정 메일은 Mailpit `http://127.0.0.1:54324` 에서 확인.
 - 데모 데이터: `npx tsx scripts/seed-demo.ts` (관리자 `demo-admin@local.test` / `password-1234`).
-- 푸시 알림은 production 빌드에서만 동작한다(서비스 워커가 개발 모드에서 등록되지 않음). `npm run build && npm start`로 확인. 로컬 DB의 웹훅 URL은 `seed.sql`이 `host.docker.internal:3000`으로 넣는다.
+- 푸시 알림은 production 빌드에서만 동작한다(서비스 워커가 개발 모드에서 등록되지 않음). `npm run build && npm start`로 확인. 로컬 DB의 웹훅 URL은 `seed.sql`이 `host.docker.internal:3000`으로 넣는다. `.env.local`에 `PUSH_WEBHOOK_SECRET=local-push-secret`을 넣어야 `seed.sql`이 넣는 값과 일치한다.
 
 ## 검증
 

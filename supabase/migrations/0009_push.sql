@@ -138,7 +138,8 @@ begin
   perform net.http_post(
     url := v_url,
     headers := jsonb_build_object('Content-Type', 'application/json', 'x-push-secret', v_secret),
-    body := jsonb_build_object('notificationId', new.id)
+    body := jsonb_build_object('notificationId', new.id),
+    timeout_milliseconds := 15000
   );
   return new;
 exception when others then
