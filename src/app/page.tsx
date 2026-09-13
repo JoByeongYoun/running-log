@@ -13,6 +13,7 @@ import { ScrollRestore } from '@/components/dashboard/ScrollRestore';
 import { RecordForm } from '@/components/record/RecordForm';
 import { SummaryAutoShow } from '@/components/summary/SummaryAutoShow';
 import { SummaryButton } from '@/components/summary/SummaryButton';
+import { RejectedBanner } from '@/components/dashboard/RejectedBanner';
 import { ErrorState } from '@/components/ui/States';
 import { messageForError } from '@/lib/errors';
 
@@ -77,6 +78,7 @@ export default async function HomePage({ searchParams }: PageProps<'/'>) {
                 {!dash.data.week.isCurrent && <SummaryButton groupId={groupId} weekStart={weekStart} />}
               </div>
             </div>
+            <RejectedBanner data={dash.data} myId={session.user.id} />
             <MyProgress data={dash.data} />
             <WeekCalendar data={dash.data} myId={session.user.id} />
             {dash.data.week.isCurrent && (
