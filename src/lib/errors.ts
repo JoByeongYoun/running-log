@@ -13,7 +13,7 @@ const MESSAGES: Record<string, string> = {
   week_finalized: '이미 확정된 주차입니다.',
   review_closed: '검토 기한이 지났습니다.',
   stale_version: '기록이 수정되었습니다. 내용을 다시 확인한 뒤 처리하세요.',
-  edit_window_closed: '진행 중인 주차의 기록만 수정·삭제할 수 있습니다.',
+  edit_window_closed: '검토 기한(월요일 12:00)이 지나 수정·삭제·재제출할 수 없습니다.',
   date_out_of_week: '기록 날짜는 이번 주 월요일부터 오늘까지만 선택할 수 있습니다.',
   photos_required: '사진을 1장 이상 첨부하세요.',
   too_many_photos: '사진은 최대 5장입니다.',

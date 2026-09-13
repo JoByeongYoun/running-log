@@ -59,3 +59,15 @@ export function formatWeekRange(weekStart: string): string {
   const [, em, ed] = end.split('-');
   return `${Number(sm)}.${Number(sd)} ~ ${Number(em)}.${Number(ed)}`;
 }
+
+/** 검토 마감 시각: 다음 주 월요일 12:00 KST (UTC+9 고정) */
+export function weekCloseDeadline(weekStart: string): Date {
+  return new Date(`${addDays(weekStart, 7)}T12:00:00+09:00`);
+}
+
+/** 본인 기록을 수정·삭제·재제출할 수 있는 창이 열려 있는지 (DB의 app.editable_record와 같은 규칙) */
+export function isEditWindowOpen(weekStart: string, state: 'open' | 'closing' | 'finalized', now: Date = new Date()): boolean {
+  if (state === 'open') return true;
+  if (state === 'closing') return now.getTime() < weekCloseDeadline(weekStart).getTime();
+  return false;
+}
