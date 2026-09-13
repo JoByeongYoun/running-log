@@ -7,27 +7,47 @@ export function ServiceWorker() {
   const reloadOnChange = useRef(false);
   useEffect(() => {
     if (!('serviceWorker' in navigator) || process.env.NODE_ENV !== 'production') return;
-    let reg: ServiceWorkerRegistration | undefined;
+    let disposed = false;
+    const cleanups: Array<() => void> = [];
+    const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
     navigator.serviceWorker.register('/sw.js').then((r) => {
-      reg = r;
-      if (r.waiting) setWaiting(r.waiting);
-      r.addEventListener('updatefound', () => {
+      if (disposed) return;
+      if (r.waiting) {
+        setWaiting(r.waiting);
+        // A browser reload also accepts an update that was already waiting.
+        // Updates discovered later still need the user's button click.
+        if (navigation?.type === 'reload') {
+          reloadOnChange.current = true;
+          r.waiting.postMessage({ type: 'SKIP_WAITING' });
+        }
+      }
+      const onUpdateFound = () => {
         const sw = r.installing;
-        sw?.addEventListener('statechange', () => {
+        if (!sw) return;
+        const onStateChange = () => {
           if (sw.state === 'installed' && navigator.serviceWorker.controller) setWaiting(sw);
-        });
-      });
+        };
+        sw.addEventListener('statechange', onStateChange);
+        cleanups.push(() => sw.removeEventListener('statechange', onStateChange));
+      };
+      r.addEventListener('updatefound', onUpdateFound);
+      cleanups.push(() => r.removeEventListener('updatefound', onUpdateFound));
     }).catch(() => {});
     // 첫 설치 때도 clients.claim()으로 controllerchange가 발생한다. 그때 새로고침하면
     // 사용자가 입력 중이던 폼(로그인 등)이 날아가므로, 이미 제어 중인 워커가 교체될 때만 새로고침한다.
     reloadOnChange.current = Boolean(navigator.serviceWorker.controller);
     let refreshing = false;
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
+    const onControllerChange = () => {
       if (!reloadOnChange.current || refreshing) return;
       refreshing = true;
       window.location.reload();
-    });
-    return () => { void reg; };
+    };
+    navigator.serviceWorker.addEventListener('controllerchange', onControllerChange);
+    return () => {
+      disposed = true;
+      navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
+      cleanups.forEach((cleanup) => cleanup());
+    };
   }, []);
   if (!waiting) return null;
   return (
