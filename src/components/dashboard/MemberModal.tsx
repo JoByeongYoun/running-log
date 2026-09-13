@@ -124,9 +124,9 @@ export function MemberModal({ member, data, isMe, onClose }: Props) {
                   const approvedH = total > 0 ? Math.round((d.approvedMeters / total) * 100) : 0;
                   const isToday = d.date === data.today;
                   return (
-                    <div key={d.date} className="flex flex-1 flex-col items-center gap-1" title={`${d.date} · ${formatMeters(total)} km`}>
-                      <div className="flex w-full flex-1 items-end">
-                        <div className="w-full overflow-hidden rounded-t-md rounded-b-sm bg-slate-100" style={{ height: `${h}%` }}>
+                    <div key={d.date} className="flex h-full flex-1 flex-col items-center gap-1" title={`${d.date} · ${formatMeters(total)} km`}>
+                      <div className="relative w-full flex-1">
+                        <div className="absolute inset-x-0 bottom-0 overflow-hidden rounded-t-md rounded-b-sm bg-slate-100" style={{ height: `${h}%` }}>
                           {total > 0 && (
                             <div className="flex h-full w-full flex-col-reverse">
                               <div className="w-full bg-gradient-to-t from-red-600 to-orange-400" style={{ height: `${approvedH}%` }} />
