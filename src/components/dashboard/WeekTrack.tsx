@@ -12,9 +12,13 @@ import { OUTCOME_LABEL, STATUS_LABEL, type MemberRow, type WeekDashboard } from 
 /** 이 비율보다 양 끝에 가까우면 캡션을 프로필 가장자리에 붙여 트랙 밖으로 나가지 않게 한다. */
 const CAPTION_EDGE_PCT = 14;
 /** 레인 높이(px)와 그 안에서 달린 자취(조각) 중심선의 y 위치 */
-const LANE_H = 62;
-const TRAIL_Y = 42;
+const LANE_H = 70;
+const TRAIL_Y = 38;
 const TRAIL_H = 18;
+/** 레인 하단 거리 표기 줄의 y 위치 */
+const STAT_Y = 55;
+/** 러너가 이 지점을 넘으면 총 거리 표기를 프로필 왼쪽으로 옮겨 남은 거리와 겹치지 않게 한다. */
+const TOTAL_FLIP_PCT = 60;
 /** 조각 안에 거리 라벨을 넣을 최소 폭(%) */
 const LABEL_MIN_PCT = 11;
 const AVATAR = 30;
@@ -128,6 +132,7 @@ function Lane({ member: m, lane, goalPct, targetMeters, isMe, ran, backParam, on
   const anchor = lane.approvedPct < CAPTION_EDGE_PCT ? 'start' : lane.approvedPct > 100 - CAPTION_EDGE_PCT ? 'end' : 'center';
   const captionShift = anchor === 'start' ? `-${AVATAR / 2}px` : anchor === 'end' ? `calc(-100% + ${AVATAR / 2}px)` : '-50%';
   const runnerLeft = ran ? `${lane.approvedPct}%` : '0%';
+  const totalOnLeft = lane.approvedPct > TOTAL_FLIP_PCT;
 
   return (
     <li className="track-lane relative" style={{ height: LANE_H }}>
@@ -151,29 +156,39 @@ function Lane({ member: m, lane, goalPct, targetMeters, isMe, ran, backParam, on
           <span className={`block rounded-full ${isMe && ran ? 'track-bob' : ''}`}>
             <Avatar src={m.avatarUrl ?? null} name={m.nickname} size={AVATAR} />
           </span>
-          {lane.overMeters > 0 && <span className="absolute -right-2 -top-2 text-sm leading-none drop-shadow" aria-hidden>🎉</span>}
-          <span className="sr-only">{OUTCOME_LABEL[m.outcome]}</span>
+            <span className="sr-only">{OUTCOME_LABEL[m.outcome]}</span>
         </button>
+        {/* 닉네임 캡션: 이름만, 잘리지 않게 */}
         <div
-          className="pointer-events-none absolute top-1.5 z-20 flex max-w-[60%] items-baseline gap-1 whitespace-nowrap rounded-full bg-white px-1.5 py-px text-[11px] leading-4 shadow-sm transition-[left] duration-1000 ease-out motion-reduce:transition-none"
+          className="pointer-events-none absolute top-1 z-20 flex items-center gap-1 whitespace-nowrap rounded-full bg-white px-1.5 py-px text-[11px] font-semibold leading-4 text-slate-900 shadow-sm transition-[left] duration-1000 ease-out motion-reduce:transition-none"
           style={{ left: runnerLeft, transform: `translateX(${captionShift})` }}
           aria-hidden
         >
-          <span className="truncate font-semibold text-slate-900">{m.nickname}</span>
-          {isMe && <span className="shrink-0 rounded-full bg-lime-500 px-1 text-[9px] font-bold leading-3.5 text-white">나</span>}
-          {status ? (
-            <span className="shrink-0 text-[10px] text-slate-500">{status}</span>
-          ) : (
-            <span className={`shrink-0 tabular-nums ${reachedGoal ? 'font-semibold text-lime-700' : 'text-slate-700'}`}>
-              {formatMeters(m.approvedMeters)}
-              {reachedGoal ? (
-                <span className="ml-1 text-[10px] font-medium text-lime-700">{lane.overMeters > 0 ? `+${formatMeters(lane.overMeters)} 초과` : '달성'}</span>
-              ) : (
-                <span className="ml-1 text-[10px] text-slate-500">· {formatMeters(remaining)} 남음</span>
-              )}
-            </span>
-          )}
+          {m.nickname}
+          {isMe && <span className="rounded-full bg-lime-500 px-1 text-[9px] font-bold leading-3.5 text-white">나</span>}
+          {status && <span className="text-[10px] font-normal text-slate-500">{status}</span>}
         </div>
+
+        {/* 총 거리: 러너 옆, 레인 하단 흰 글씨 */}
+        <span
+          className="pointer-events-none absolute z-10 whitespace-nowrap text-[10px] font-bold tabular-nums leading-none text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.45)] transition-[left] duration-1000 ease-out motion-reduce:transition-none"
+          style={{ left: runnerLeft, top: STAT_Y, transform: totalOnLeft ? `translateX(calc(-100% - ${AVATAR / 2 + 3}px))` : `translateX(${AVATAR / 2 + 3}px)` }}
+          aria-hidden
+        >
+          {formatMeters(m.approvedMeters)} km
+          {reachedGoal && <span className="ml-1 text-lime-200">{lane.overMeters > 0 ? `+${formatMeters(lane.overMeters)} 초과` : '달성'} 🎉</span>}
+        </span>
+
+        {/* 남은 거리: 결승선 앞, 레인 하단 (목표 달성 후에는 총 거리 옆에 합쳐 표시) */}
+        {!reachedGoal && (
+          <span
+            className="pointer-events-none absolute z-10 -translate-x-full whitespace-nowrap text-[10px] font-medium tabular-nums leading-none text-white/85 drop-shadow-[0_1px_1px_rgba(0,0,0,0.45)]"
+            style={{ left: `calc(${goalPct}% - 9px)`, top: STAT_Y }}
+            aria-hidden
+          >
+            {formatMeters(remaining)} 남음
+          </span>
+        )}
       </div>
     </li>
   );
