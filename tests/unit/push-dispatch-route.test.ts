@@ -52,4 +52,26 @@ describe('POST /api/push/dispatch', () => {
     expect(rpc).toHaveBeenCalledWith('get_push_payload', { p_notification_id: ID });
     expect(sendToUser).toHaveBeenCalledWith(expect.anything(), 'u1', { title: 'Running Log', body: '5.00km 기록이 승인되었습니다.', url: '/notifications', tag: ID });
   });
+
+  it('returns 500 when RPC fails', async () => {
+    const { POST } = await import('@/app/api/push/dispatch/route');
+    rpc.mockResolvedValueOnce({ data: null, error: { message: 'boom' } });
+    const res = await POST(post({ notificationId: ID }, 's3cret'));
+    expect(res.status).toBe(500);
+    expect((await res.json()).error).toBe('payload_failed');
+    expect(sendToUser).not.toHaveBeenCalled();
+  });
+
+  it('returns 400 when body is malformed JSON', async () => {
+    const { POST } = await import('@/app/api/push/dispatch/route');
+    const req = new NextRequest('http://localhost/api/push/dispatch', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-push-secret': 's3cret' },
+      body: '{not json',
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toBe('invalid_body');
+    expect(rpc).not.toHaveBeenCalled();
+  });
 });
