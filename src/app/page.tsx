@@ -8,7 +8,7 @@ import { NoGroupHome } from '@/components/group/NoGroupHome';
 import { HomeHeader } from '@/components/layout/HomeHeader';
 import { WeekNav } from '@/components/dashboard/WeekNav';
 import { MyProgress } from '@/components/dashboard/MyProgress';
-import { WeekCalendar } from '@/components/dashboard/WeekCalendar';
+import { WeekTrack } from '@/components/dashboard/WeekTrack';
 import { ScrollRestore } from '@/components/dashboard/ScrollRestore';
 import { RecordForm } from '@/components/record/RecordForm';
 import { SummaryAutoShow } from '@/components/summary/SummaryAutoShow';
@@ -78,7 +78,7 @@ export default async function HomePage({ searchParams }: PageProps<'/'>) {
               </div>
             </div>
             <MyProgress data={dash.data} />
-            <WeekCalendar data={dash.data} myId={session.user.id} />
+            <WeekTrack data={dash.data} myId={session.user.id} />
             {dash.data.week.isCurrent && (
               <section id="today" className="scroll-mt-16 rounded-2xl border border-slate-200 p-4">
                 <h2 className="mb-3 font-semibold">오늘의 기록 등록</h2>
