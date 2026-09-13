@@ -52,7 +52,7 @@ describe('notifications and weekly summary', () => {
 
   it('summary auto-show claims exactly once per user/week, only for week participants', async () => {
     // move to next week; previous week (09-07) had m1 (eligible), owner, m2 (left during week)
-    await setFakeNow('2026-09-14T04:00:00Z');
+    await setFakeNow('2026-09-15T04:00:00Z'); // Tuesday 13:00 KST, past the review deadline
     const first = await m1.client.rpc('claim_summary_auto_show');
     expect(first.error).toBeNull();
     const s = first.data as { week: { weekStart: string; state: string }; successCount: number; evaluatedCount: number; members: Array<{ userId: string; leftDuringWeek: boolean }>; myUserId: string };

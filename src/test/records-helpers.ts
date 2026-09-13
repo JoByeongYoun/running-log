@@ -16,6 +16,6 @@ export async function uploadEvidence(user: TestUser, count = 1): Promise<string[
   return ids;
 }
 
-export async function submit(user: TestUser, meters: number, uploads: string[], key = crypto.randomUUID()) {
-  return user.client.rpc('submit_record', { p_submission_key: key, p_distance_meters: meters, p_memo: null, p_upload_ids: uploads });
+export async function submit(user: TestUser, meters: number, uploads: string[], key = crypto.randomUUID(), activityDate?: string) {
+  return user.client.rpc('submit_record', { p_submission_key: key, p_distance_meters: meters, p_memo: null, p_upload_ids: uploads, ...(activityDate ? { p_activity_date: activityDate } : {}) });
 }

@@ -18,41 +18,12 @@ body {
 }
 input, textarea, select, button { font: inherit; }
 
-/* ── 주간 트랙 (WeekTrack): 육상 트랙 표면 ─────────────── */
-/* 잔디 인필드: 잔디 깎은 줄무늬 */
-.track-grass {
-  background-color: #3f9d4a;
-  background-image: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.07) 0 28px, transparent 28px 56px);
-}
-/* 붉은 타탄 표면: 미세한 입자 질감 */
-.track-surface {
-  background-color: #d7553c;
-  background-image:
-    radial-gradient(rgba(255, 255, 255, 0.10) 0.6px, transparent 0.6px),
-    radial-gradient(rgba(0, 0, 0, 0.10) 0.6px, transparent 0.6px);
-  background-size: 6px 6px, 7px 7px;
-  background-position: 0 0, 3px 4px;
-}
-/* 레인 사이 흰 구분선 */
-.track-lane + .track-lane {
-  border-top: 2px solid rgba(255, 255, 255, 0.85);
-}
-/* 승인 대기 조각: 흰/노랑 빗금 */
+/* ── 주간 트랙 (WeekTrack) ─────────────────────────────── */
 .track-seg-pending {
-  background-image: repeating-linear-gradient(135deg, #fde047 0 5px, #fff7cc 5px 10px);
+  background-image: repeating-linear-gradient(135deg, #fbbf24 0 5px, #fde68a 5px 10px);
 }
-/* 결승선 너머 오버런 구간 */
 .track-overrun {
-  background-image: repeating-linear-gradient(135deg, rgba(0, 0, 0, 0.12) 0 4px, transparent 4px 9px);
-}
-/* 체크무늬 결승선 */
-.track-finish {
-  background-color: #fff;
-  background-image:
-    linear-gradient(45deg, #1e293b 25%, transparent 25%, transparent 75%, #1e293b 75%),
-    linear-gradient(45deg, #1e293b 25%, transparent 25%, transparent 75%, #1e293b 75%);
-  background-size: 6px 6px;
-  background-position: 0 0, 3px 3px;
+  background-image: repeating-linear-gradient(135deg, transparent 0 4px, rgba(148, 163, 184, 0.25) 4px 6px);
 }
 @keyframes track-bob {
   0%, 100% { transform: translateY(0); }

@@ -3,14 +3,15 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 const hooks = vi.hoisted(() => ({ effects: [] as Array<() => void | (() => void)>, setWaiting: vi.fn() }));
 vi.mock('react', async (importOriginal) => ({
   ...await importOriginal<typeof import('react')>(),
+  useRef: (value: boolean) => ({ current: value }),
   useState: () => [null, hooks.setWaiting],
   useEffect: (effect: () => void | (() => void)) => hooks.effects.push(effect),
 }));
 import { ServiceWorker } from '@/components/pwa/ServiceWorker';
 
-async function mount(type: string, waiting: object | null) {
+async function mount(type: string, waiting: object | null, controller: object | null = {}) {
   const registration = Object.assign(new EventTarget(), { waiting, installing: null as (EventTarget & { state: string; postMessage: ReturnType<typeof vi.fn> }) | null });
-  const container = Object.assign(new EventTarget(), { controller: {}, register: vi.fn().mockResolvedValue(registration) });
+  const container = Object.assign(new EventTarget(), { controller, register: vi.fn().mockResolvedValue(registration) });
   const reload = vi.fn();
   vi.stubEnv('NODE_ENV', 'production');
   vi.stubGlobal('navigator', { serviceWorker: container });
@@ -30,6 +31,22 @@ describe('service worker updates', () => {
     const { container, reload, cleanup } = await mount('reload', waiting);
     expect(waiting.postMessage).toHaveBeenCalledWith({ type: 'SKIP_WAITING' });
     container.dispatchEvent(new Event('controllerchange'));
+    container.dispatchEvent(new Event('controllerchange'));
+    expect(reload).toHaveBeenCalledTimes(1);
+    cleanup?.();
+  });
+
+  it('does not reload when the first installation takes control', async () => {
+    const { container, reload, cleanup } = await mount('navigate', null, null);
+    container.dispatchEvent(new Event('controllerchange'));
+    expect(reload).not.toHaveBeenCalled();
+    cleanup?.();
+  });
+
+  it('reloads after accepting a waiting update even on an uncontrolled page', async () => {
+    const waiting = { postMessage: vi.fn() };
+    const { container, reload, cleanup } = await mount('reload', waiting, null);
+    expect(waiting.postMessage).toHaveBeenCalledWith({ type: 'SKIP_WAITING' });
     container.dispatchEvent(new Event('controllerchange'));
     expect(reload).toHaveBeenCalledTimes(1);
     cleanup?.();

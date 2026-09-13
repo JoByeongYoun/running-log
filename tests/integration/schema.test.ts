@@ -45,7 +45,9 @@ describe('schema constraints and time helpers', () => {
     expect((await admin.rpc('app_week_start_of', { p: '2026-09-13T14:59:00Z' })).data).toBe('2026-09-07');
     expect((await admin.rpc('app_week_start_of', { p: '2026-09-13T15:00:00Z' })).data).toBe('2026-09-14');
     const { data: deadline } = await admin.rpc('app_week_close_deadline', { p: '2026-09-07' });
-    expect(new Date(deadline as string).toISOString()).toBe('2026-09-14T03:00:00.000Z');
+    expect(new Date(deadline as string).toISOString()).toBe('2026-09-15T03:00:00.000Z'); // Tuesday 12:00 KST
+    const { data: submitDeadline } = await admin.rpc('app_week_submit_deadline', { p: '2026-09-07' });
+    expect(new Date(submitDeadline as string).toISOString()).toBe('2026-09-14T15:00:00.000Z'); // Tuesday 00:00 KST
   });
 
   it('fake clock drives app.now()', async () => {

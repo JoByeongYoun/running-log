@@ -15,7 +15,7 @@ describe('notificationText', () => {
     expect(notificationText(view('record_review', { status: 'rejected', reason: '흐림', meters: 5000 }))).toBe('5.00km 기록이 반려되었습니다 (흐림).');
     expect(notificationText(view('record_expired', { date: '2026-09-01', meters: 5000 }))).toBe('2026-09-01 5.00km 기록이 검토 기한 만료로 합계에서 제외되었습니다.');
     expect(notificationText(view('review_reminder', { phase: '11' }))).toBe('지난주 기록 검토 마감이 1시간 남았습니다 (12:00).');
-    expect(notificationText(view('review_reminder', { phase: '00' }))).toBe('지난주 검토가 남아 있습니다. 월요일 12:00까지 처리하세요.');
+    expect(notificationText(view('review_reminder', { phase: '00' }))).toBe('지난주 검토가 남아 있습니다. 화요일 12:00까지 처리하세요.');
     expect(notificationText(view('week_final', { weekStart: '2026-08-31' }))).toMatch(/주간 결과가 확정되었습니다\.$/);
     expect(notificationText(view('unknown'))).toBe('알림');
   });
