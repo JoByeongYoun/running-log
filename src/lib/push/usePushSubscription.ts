@@ -28,10 +28,15 @@ export function usePushSubscription() {
   const refresh = useCallback(async () => {
     if (!supported()) { setStatus(isIosSafariBrowserTab() ? 'ios-install-required' : 'unsupported'); return; }
     if (Notification.permission === 'denied') { setStatus('denied'); return; }
-    const reg = await navigator.serviceWorker.ready;
-    const sub = await reg.pushManager.getSubscription();
-    if (sub && (await hasPushSubscription(sub.endpoint))) { setStatus('subscribed'); return; }
-    setStatus('available');
+    try {
+      const timeout = new Promise<never>((_, reject) => { setTimeout(() => reject(new Error('sw-ready-timeout')), 5000); });
+      const reg = await Promise.race([navigator.serviceWorker.ready, timeout]);
+      const sub = await reg.pushManager.getSubscription();
+      if (sub && (await hasPushSubscription(sub.endpoint))) { setStatus('subscribed'); return; }
+      setStatus('available');
+    } catch {
+      setStatus('available');
+    }
   }, []);
 
   useEffect(() => { queueMicrotask(() => { void refresh(); }); }, [refresh]);
@@ -40,7 +45,7 @@ export function usePushSubscription() {
     setBusy(true);
     try {
       const permission = await Notification.requestPermission();
-      if (permission !== 'granted') { await refresh(); return permission === 'denied' ? '알림 권한이 거부되었습니다.' : null; }
+      if (permission !== 'granted') { await refresh(); return permission === 'denied' ? '알림 권한이 거부되었습니다.' : '알림 권한이 필요합니다.'; }
       const key = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
       if (!key) return '푸시 설정이 완료되지 않았습니다.';
       const reg = await navigator.serviceWorker.ready;
