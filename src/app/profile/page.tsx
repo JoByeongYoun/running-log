@@ -3,6 +3,7 @@ import { getSessionUser } from '@/lib/supabase/server';
 import { signedUrl } from '@/lib/storage/signed-url';
 import { ProfileForm } from './ProfileForm';
 import { AppHeader } from '@/components/layout/AppHeader';
+import { PushSection } from './PushSection';
 import { LeaveGroupSection } from './LeaveGroupSection';
 
 export default async function ProfilePage() {
@@ -19,6 +20,7 @@ export default async function ProfilePage() {
       <AppHeader title="프로필" back="/" />
       <main className="mx-auto w-full max-w-md space-y-8 px-5 py-6">
         <ProfileForm userId={session.user.id} nickname={session.profile.nickname ?? ''} avatarUrl={avatarUrl} />
+        <PushSection />
         <LeaveGroupSection
           groupName={membership?.groups?.name ?? null}
           isAdmin={membership?.role === 'admin'}

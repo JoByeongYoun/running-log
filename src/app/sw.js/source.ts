@@ -3,9 +3,10 @@ export const SW_SOURCE = String.raw`
  * - precache: offline page + icons
  * - runtime: /_next/static, /icons, fonts → cache-first
  * - everything else (HTML, RSC, API, Supabase, images) → network only
- * - update: waits until the page asks (no auto skipWaiting) */
+ * - update: waits until the page asks (no auto skipWaiting)
+ * - push: show notification, click → focus/open url */
 const VERSION = self.__SW_VERSION__ || 'dev';
-const STATIC_CACHE = \`static-\${VERSION}\`;
+const STATIC_CACHE = 'static-' + VERSION;
 const PRECACHE = ['/offline', '/icons/icon-192.png', '/icons/icon-512.png', '/manifest.webmanifest'];
 
 self.addEventListener('install', (event) => {
@@ -22,6 +23,31 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
+});
+
+self.addEventListener('push', (event) => {
+  let data = {};
+  try { data = event.data ? event.data.json() : {}; } catch (e) { data = {}; }
+  const title = data.title || 'Running Log';
+  event.waitUntil(self.registration.showNotification(title, {
+    body: data.body || '',
+    icon: '/icons/icon-192.png',
+    badge: '/icons/icon-192.png',
+    tag: data.tag || undefined,
+    data: { url: data.url || '/notifications' },
+  }));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const target = new URL((event.notification.data && event.notification.data.url) || '/', self.location.origin).href;
+  event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+    const win = list.find((c) => c.url.indexOf(self.location.origin) === 0);
+    if (win && 'navigate' in win) {
+      return win.focus().then(function (w) { return (w || win).navigate(target); }).catch(function () { return self.clients.openWindow(target); });
+    }
+    return self.clients.openWindow(target);
+  }));
 });
 
 function isStaticAsset(url) {
