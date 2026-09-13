@@ -82,7 +82,7 @@ export default async function HomePage({ searchParams }: PageProps<'/'>) {
             {dash.data.week.isCurrent && (
               <section id="today" className="scroll-mt-16 rounded-2xl border border-slate-200 p-4">
                 <h2 className="mb-3 font-semibold">오늘의 기록 등록</h2>
-                <RecordForm today={dash.data.today} disabledReason={state.membership.archived ? '보관된 그룹에는 기록을 등록할 수 없습니다.' : undefined} />
+                <RecordForm today={dash.data.today} notice={state.membership.notice} disabledReason={state.membership.archived ? '보관된 그룹에는 기록을 등록할 수 없습니다.' : undefined} />
               </section>
             )}
           </>

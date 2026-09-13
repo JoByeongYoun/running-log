@@ -68,3 +68,27 @@ export function RecordOwnerActions({ record, photos: existing }: Props) {
     </section>
   );
 }
+
+/** 관리자가 다른 멤버의 기록을 삭제한다 (주차 확정 전까지). */
+export function AdminDeleteAction({ recordId, nickname }: { recordId: string; nickname: string }) {
+  const [open, setOpen] = useState(false);
+  const [pending, start] = useTransition();
+  const router = useRouter();
+  const toast = useToast();
+  return (
+    <section>
+      <Button variant="danger" full onClick={() => setOpen(true)}>관리자 권한으로 삭제</Button>
+      <Modal open={open} onClose={() => setOpen(false)} title={`${nickname}님의 기록을 삭제할까요?`}>
+        <p className="text-sm text-slate-700">사진과 댓글도 함께 삭제됩니다. 되돌릴 수 없습니다.</p>
+        <div className="mt-5 flex gap-2">
+          <Button variant="secondary" full onClick={() => setOpen(false)}>취소</Button>
+          <Button variant="danger" full loading={pending} onClick={() => start(async () => {
+            const res = await deleteRecord(recordId);
+            if (res.error) { toast(res.error, 'error'); return; }
+            toast('삭제했습니다.'); router.push('/');
+          })}>삭제</Button>
+        </div>
+      </Modal>
+    </section>
+  );
+}

@@ -203,6 +203,8 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          notice: string | null
+          notice_updated_at: string | null
           updated_at: string
         }
         Insert: {
@@ -210,6 +212,8 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
+          notice?: string | null
+          notice_updated_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -217,6 +221,8 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+          notice?: string | null
+          notice_updated_at?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -783,8 +789,13 @@ export type Database = {
         Returns: string
       }
       set_fake_now: { Args: { p: string }; Returns: undefined }
+      set_group_notice: {
+        Args: { p_group_id: string; p_notice: string }
+        Returns: undefined
+      }
       submit_record: {
         Args: {
+          p_activity_date?: string
           p_client_date?: string
           p_distance_meters: number
           p_memo: string

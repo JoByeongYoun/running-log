@@ -54,6 +54,16 @@ export async function scheduleSettings(_prev: ActionState, formData: FormData): 
   return { success: `${data}부터 적용됩니다.` };
 }
 
+export async function setGroupNotice(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const parsed = z.object({ groupId: uuidSchema, notice: z.string().trim().max(500, '공지사항은 500자 이하입니다.') }).safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: firstIssue(parsed.error) };
+  const supabase = await createServerSupabase();
+  const { error } = await supabase.rpc('set_group_notice', { p_group_id: parsed.data.groupId, p_notice: parsed.data.notice });
+  if (error) return { error: messageForError(error) };
+  revalidatePath('/'); revalidatePath('/admin');
+  return { success: parsed.data.notice ? '공지사항을 저장했습니다.' : '공지사항을 지웠습니다.' };
+}
+
 export async function transferAdmin(groupId: string, toUserId: string): Promise<{ error?: string }> {
   const supabase = await createServerSupabase();
   const { error } = await supabase.rpc('transfer_admin', { p_group_id: groupId, p_to_user_id: toUserId });

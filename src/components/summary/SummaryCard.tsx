@@ -3,6 +3,7 @@ import { formatMeters } from '@/lib/domain/distance';
 import { assignRanks } from '@/lib/domain/rank';
 import { formatWeekRange } from '@/lib/domain/week';
 import { Avatar } from '@/components/ui/Avatar';
+import { RankBadge } from '@/components/dashboard/RankBadge';
 import type { WeekSummary, MemberRow } from '@/lib/dashboard/types';
 
 export const PAGE_SIZE = 12;
@@ -45,7 +46,7 @@ export const SummaryCard = forwardRef<HTMLDivElement, { summary: WeekSummary; pa
       <ol className="mt-3 divide-y divide-slate-100">
         {slice.map((m) => (
           <li key={m.userId} className={`flex items-center gap-2 py-1.5 text-sm ${m.userId === myUserId ? 'font-semibold' : ''}`}>
-            <span className="w-8 text-slate-500">{displayRank.get(m.userId)}위</span>
+            <span className="flex w-8 justify-center"><RankBadge rank={displayRank.get(m.userId)} /></span>
             <Avatar src={m.avatarUrl ?? null} name={m.nickname} size={24} />
             <span className="min-w-0 flex-1 truncate">{m.nickname}{m.leftDuringWeek || !m.activeNow ? <span className="ml-1 text-xs font-normal text-slate-400">탈퇴</span> : null}</span>
             <span className="tabular-nums">{formatMeters(m.approvedMeters)} km</span>

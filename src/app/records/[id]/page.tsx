@@ -4,13 +4,13 @@ import { getSessionUser } from '@/lib/supabase/server';
 import { getGroupState } from '@/lib/group-state';
 import { signedUrls } from '@/lib/storage/signed-url';
 import { formatMeters } from '@/lib/domain/distance';
-import { kstDateOf, isValidYmd, mondayOf } from '@/lib/domain/week';
+import { isValidYmd, mondayOf } from '@/lib/domain/week';
 import { AppHeader } from '@/components/layout/AppHeader';
 import { Avatar } from '@/components/ui/Avatar';
 import { STATUS_LABEL } from '@/lib/dashboard/types';
 import { PhotoGallery } from '@/components/record/PhotoGallery';
 import { CommentList } from '@/components/record/CommentList';
-import { RecordOwnerActions } from '@/components/record/RecordOwnerActions';
+import { RecordOwnerActions, AdminDeleteAction } from '@/components/record/RecordOwnerActions';
 import { ReviewActions } from '@/components/admin/ReviewActions';
 
 export default async function RecordPage({ params, searchParams }: PageProps<'/records/[id]'>) {
@@ -39,9 +39,10 @@ export default async function RecordPage({ params, searchParams }: PageProps<'/r
   const last = reviews[reviews.length - 1];
   const isOwner = rec.user_id === session.user.id;
   const isAdmin = state.membership.role === 'admin';
-  const today = kstDateOf(new Date());
-  const canEdit = isOwner && (rec.status === 'pending' || rec.status === 'rejected') && rec.activity_date === today && rec.group_weeks?.state === 'open';
+  const canEdit = isOwner && (rec.status === 'pending' || rec.status === 'rejected') && rec.group_weeks?.state === 'open';
   const weekFinal = rec.group_weeks?.state === 'finalized';
+  const photoItems = photos.map((p) => ({ id: p.id, url: photoUrls.get(p.storage_path) ?? '' }));
+  const editable = { id: rec.id, distance: formatMeters(rec.distance_meters), memo: rec.memo ?? '', version: rec.version, status: rec.status };
 
   const { data: comments } = await supabase
     .from('comments').select('id, user_id, body, created_at, deleted_at, profiles!comments_user_id_fkey(nickname, avatar_path)')
@@ -73,14 +74,10 @@ export default async function RecordPage({ params, searchParams }: PageProps<'/r
           {rec.status === 'pending' && rec.version > 1 && <p className="mt-2 text-xs text-slate-500">수정된 기록입니다 (v{rec.version}).</p>}
         </section>
 
-        <PhotoGallery photos={photos.map((p) => ({ id: p.id, url: photoUrls.get(p.storage_path) ?? '' }))} />
+        <PhotoGallery photos={photoItems} editable={canEdit ? editable : undefined} />
 
-        {canEdit && (
-          <RecordOwnerActions
-            record={{ id: rec.id, distance: formatMeters(rec.distance_meters), memo: rec.memo ?? '', version: rec.version, status: rec.status }}
-            photos={photos.map((p) => ({ id: p.id, url: photoUrls.get(p.storage_path) ?? '' }))}
-          />
-        )}
+        {canEdit && <RecordOwnerActions record={editable} photos={photoItems} />}
+        {isAdmin && !isOwner && !weekFinal && <AdminDeleteAction recordId={rec.id} nickname={rec.profiles?.nickname ?? '(이름 없음)'} />}
         {isAdmin && !weekFinal && (rec.status === 'pending' || rec.status === 'approved') && (
           <ReviewActions recordId={rec.id} status={rec.status} version={rec.version} />
         )}
