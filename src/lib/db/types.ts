@@ -441,6 +441,47 @@ export type Database = {
         }
         Relationships: []
       }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          last_used_at: string | null
+          p256dh: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          last_used_at?: string | null
+          p256dh: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          last_used_at?: string | null
+          p256dh?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       record_photos: {
         Row: {
           id: string
@@ -736,6 +777,7 @@ export type Database = {
       get_available_weeks: { Args: { p_group_id: string }; Returns: string[] }
       get_my_group_state: { Args: never; Returns: Json }
       get_notifications: { Args: { p_limit?: number }; Returns: Json }
+      get_push_payload: { Args: { p_notification_id: string }; Returns: Json }
       get_unread_count: { Args: never; Returns: number }
       get_week_dashboard: {
         Args: { p_group_id: string; p_week_start: string }
@@ -778,6 +820,15 @@ export type Database = {
         Returns: undefined
       }
       run_week_maintenance: { Args: never; Returns: Json }
+      save_push_subscription: {
+        Args: {
+          p_auth: string
+          p_endpoint: string
+          p_p256dh: string
+          p_user_agent: string
+        }
+        Returns: undefined
+      }
       schedule_group_settings: {
         Args: { p_group_id: string; p_penalty: string; p_target_meters: number }
         Returns: string
@@ -794,6 +845,10 @@ export type Database = {
         Returns: string
       }
       test_reset: { Args: never; Returns: undefined }
+      test_set_push_settings: {
+        Args: { p_secret: string; p_url: string }
+        Returns: undefined
+      }
       transfer_admin: {
         Args: { p_group_id: string; p_to_user_id: string }
         Returns: undefined
