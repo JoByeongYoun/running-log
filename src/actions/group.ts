@@ -12,7 +12,7 @@ export async function leaveGroup(): Promise<{ error?: string }> {
   const supabase = await createServerSupabase();
   const { error } = await supabase.rpc('leave_group');
   if (error) return { error: messageForError(error) };
-  revalidatePath('/');
+  revalidatePath('/'); revalidatePath('/group');
   return {};
 }
 
@@ -27,7 +27,7 @@ export async function createGroup(_prev: ActionState, formData: FormData): Promi
   });
   if (error) return { error: messageForError(error) };
   const code = data?.[0]?.invite_code;
-  revalidatePath('/');
+  revalidatePath('/'); revalidatePath('/group');
   redirect(`/admin?tab=members&invite=${encodeURIComponent(code ?? '')}`);
 }
 
@@ -37,7 +37,7 @@ export async function renameGroup(_prev: ActionState, formData: FormData): Promi
   const supabase = await createServerSupabase();
   const { error } = await supabase.rpc('rename_group', { p_group_id: parsed.data.groupId, p_name: parsed.data.name });
   if (error) return { error: messageForError(error) };
-  revalidatePath('/'); revalidatePath('/admin');
+  revalidatePath('/'); revalidatePath('/group'); revalidatePath('/admin');
   return { success: '그룹명을 변경했습니다.' };
 }
 
@@ -60,7 +60,7 @@ export async function setGroupNotice(_prev: ActionState, formData: FormData): Pr
   const supabase = await createServerSupabase();
   const { error } = await supabase.rpc('set_group_notice', { p_group_id: parsed.data.groupId, p_notice: parsed.data.notice });
   if (error) return { error: messageForError(error) };
-  revalidatePath('/'); revalidatePath('/admin');
+  revalidatePath('/'); revalidatePath('/group'); revalidatePath('/admin');
   return { success: parsed.data.notice ? '공지사항을 저장했습니다.' : '공지사항을 지웠습니다.' };
 }
 
@@ -68,7 +68,7 @@ export async function transferAdmin(groupId: string, toUserId: string): Promise<
   const supabase = await createServerSupabase();
   const { error } = await supabase.rpc('transfer_admin', { p_group_id: groupId, p_to_user_id: toUserId });
   if (error) return { error: messageForError(error) };
-  revalidatePath('/'); revalidatePath('/admin');
+  revalidatePath('/'); revalidatePath('/group'); revalidatePath('/admin');
   return {};
 }
 

@@ -59,7 +59,7 @@ export function RecordForm({ today, notice, disabledReason }: { today: string; n
       toast('기록을 등록했습니다. 관리자 승인을 기다려 주세요.');
       setSubmissionKey(crypto.randomUUID());
       setDistance(''); setMemo(''); setPhotos([]); setActivityDate(today);
-      router.refresh();
+      router.push('/');
     });
   }
 
