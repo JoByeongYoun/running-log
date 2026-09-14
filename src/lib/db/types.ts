@@ -285,6 +285,7 @@ export type Database = {
           id: string
           joined_at: string
           left_at: string | null
+          rest_started_at: string | null
           role: Database["public"]["Enums"]["membership_role"]
           user_id: string
         }
@@ -293,6 +294,7 @@ export type Database = {
           id?: string
           joined_at?: string
           left_at?: string | null
+          rest_started_at?: string | null
           role?: Database["public"]["Enums"]["membership_role"]
           user_id: string
         }
@@ -301,6 +303,7 @@ export type Database = {
           id?: string
           joined_at?: string
           left_at?: string | null
+          rest_started_at?: string | null
           role?: Database["public"]["Enums"]["membership_role"]
           user_id?: string
         }
@@ -562,6 +565,61 @@ export type Database = {
           },
         ]
       }
+      rest_requests: {
+        Row: {
+          created_at: string
+          group_id: string
+          id: string
+          reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["join_status"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          id?: string
+          reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["join_status"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          id?: string
+          reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["join_status"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rest_requests_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rest_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rest_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       running_records: {
         Row: {
           activity_date: string
@@ -634,6 +692,7 @@ export type Database = {
           eligible: boolean
           joined_this_week: boolean
           left_during_week: boolean
+          resting: boolean
           user_id: string
           week_id: string
         }
@@ -641,6 +700,7 @@ export type Database = {
           eligible?: boolean
           joined_this_week?: boolean
           left_during_week?: boolean
+          resting?: boolean
           user_id: string
           week_id: string
         }
@@ -648,6 +708,7 @@ export type Database = {
           eligible?: boolean
           joined_this_week?: boolean
           left_during_week?: boolean
+          resting?: boolean
           user_id?: string
           week_id?: string
         }
@@ -763,6 +824,10 @@ export type Database = {
         Args: { p_request_id: string }
         Returns: undefined
       }
+      cancel_rest_request: {
+        Args: { p_request_id: string }
+        Returns: undefined
+      }
       claim_summary_auto_show: { Args: never; Returns: Json }
       cleanup_expired_uploads: { Args: never; Returns: string[] }
       create_group: {
@@ -781,6 +846,7 @@ export type Database = {
       }
       delete_comment: { Args: { p_comment_id: string }; Returns: undefined }
       delete_record: { Args: { p_record_id: string }; Returns: string[] }
+      end_my_rest: { Args: never; Returns: undefined }
       get_available_weeks: { Args: { p_group_id: string }; Returns: string[] }
       get_my_group_state: { Args: never; Returns: Json }
       get_notifications: { Args: { p_limit?: number }; Returns: Json }
@@ -813,6 +879,7 @@ export type Database = {
         Returns: undefined
       }
       request_join: { Args: { p_code: string }; Returns: string }
+      request_rest: { Args: { p_reason?: string }; Returns: string }
       review_join_request: {
         Args: { p_approve: boolean; p_request_id: string }
         Returns: undefined
@@ -824,6 +891,10 @@ export type Database = {
           p_reason: string
           p_record_id: string
         }
+        Returns: undefined
+      }
+      review_rest_request: {
+        Args: { p_approve: boolean; p_request_id: string }
         Returns: undefined
       }
       run_week_maintenance: { Args: never; Returns: Json }
@@ -843,6 +914,10 @@ export type Database = {
       set_fake_now: { Args: { p: string }; Returns: undefined }
       set_group_notice: {
         Args: { p_group_id: string; p_notice: string }
+        Returns: undefined
+      }
+      set_member_rest: {
+        Args: { p_group_id: string; p_resting: boolean; p_user_id: string }
         Returns: undefined
       }
       submit_record: {

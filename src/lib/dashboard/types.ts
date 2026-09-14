@@ -18,6 +18,10 @@ export type MemberRow = {
   joinedThisWeek: boolean;
   leftDuringWeek: boolean;
   activeNow: boolean;
+  /** 이 주 스냅샷에서 휴식 중(평가 제외) */
+  resting: boolean;
+  /** 현재 시점 휴식 중 */
+  restingNow: boolean;
   approvedMeters: number;
   pendingMeters: number;
   rank: number | null;
@@ -30,7 +34,7 @@ export type WeekDashboard = {
     id: string; weekStart: string; state: WeekState; targetMeters: number; penalty: string;
     finalizedAt: string | null; groupName: string; groupTotalMeters: number | null; isCurrent: boolean;
   };
-  me: { approvedMeters: number; pendingMeters: number; eligible: boolean; inWeek: boolean };
+  me: { approvedMeters: number; pendingMeters: number; eligible: boolean; resting: boolean; inWeek: boolean };
   members: MemberRow[];
   pendingCount: number;
   provisional: boolean;
