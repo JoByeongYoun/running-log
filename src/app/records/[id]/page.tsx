@@ -4,6 +4,7 @@ import { getSessionUser } from '@/lib/supabase/server';
 import { getGroupState } from '@/lib/group-state';
 import { signedUrls } from '@/lib/storage/signed-url';
 import { formatMeters } from '@/lib/domain/distance';
+import { PHOTO_RETENTION_WEEKS } from '@/lib/domain/constants';
 import { isValidYmd, mondayOf, isEditWindowOpen } from '@/lib/domain/week';
 import { AppHeader } from '@/components/layout/AppHeader';
 import { Avatar } from '@/components/ui/Avatar';
@@ -25,7 +26,7 @@ export default async function RecordPage({ params, searchParams }: PageProps<'/r
 
   const { data: rec } = await supabase
     .from('running_records')
-    .select('id, user_id, activity_date, distance_meters, memo, status, version, created_at, updated_at, group_weeks(week_start, state), profiles!running_records_user_id_fkey(nickname, avatar_path), record_photos(id, storage_path, order_index), record_reviews(id, to_status, reason, created_at, actor_id)')
+    .select('id, user_id, activity_date, distance_meters, memo, status, version, created_at, updated_at, photos_purged_at, group_weeks(week_start, state), profiles!running_records_user_id_fkey(nickname, avatar_path), record_photos(id, storage_path, order_index), record_reviews(id, to_status, reason, created_at, actor_id)')
     .eq('id', id)
     .maybeSingle();
   if (!rec) notFound();
@@ -85,6 +86,11 @@ export default async function RecordPage({ params, searchParams }: PageProps<'/r
         </section>
 
         <PhotoGallery photos={photoItems} editable={canEdit ? editable : undefined} />
+        {rec.photos_purged_at && photoItems.length === 0 && (
+          <p className="rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-500">
+            증거 사진은 주간 마감 후 {PHOTO_RETENTION_WEEKS}주까지만 보관되어 삭제되었습니다. 기록과 검토 결과는 그대로 유지됩니다.
+          </p>
+        )}
 
         {canEdit && <RecordOwnerActions record={editable} photos={photoItems} />}
         {isAdmin && !isOwner && !weekFinal && <AdminDeleteAction recordId={rec.id} nickname={rec.profiles?.nickname ?? '(이름 없음)'} />}

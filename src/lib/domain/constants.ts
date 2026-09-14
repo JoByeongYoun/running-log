@@ -3,6 +3,8 @@ export const MAX_TARGET_METERS = 1_000_000;
 export const MAX_PHOTOS = 5;
 export const MIN_PHOTOS = 1;
 export const MAX_FILE_BYTES = 10_485_760;
+// 주간 마감 후 증거 사진 보관 기간. 지나면 사진만 삭제되고 기록은 남는다 (Supabase Free 1GB 상한 대응).
+export const PHOTO_RETENTION_WEEKS = 8;
 export const NICKNAME_MIN = 2;
 export const NICKNAME_MAX = 20;
 export const GROUP_NAME_MIN = 2;
