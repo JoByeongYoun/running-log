@@ -46,9 +46,10 @@ export function MemberModal({ member, data, isMe, onClose }: Props) {
       {m && (
         <div>
           {/* Hero: 앱 아이콘과 같은 크림 종이 톤 + 레드/틸 포인트 */}
-          {/* 장식 원은 filter: blur 대신 배경 그라데이션으로 그린다 — blur 레이어 위의 텍스트가 흐려지는 문제 방지 */}
-          <div className="relative overflow-hidden bg-[#f6f1e8] px-5 pb-6 pt-5 text-slate-900 [background-image:radial-gradient(180px_180px_at_calc(100%+20px)_-20px,rgba(254,202,202,0.7),rgba(255,237,213,0.35)_55%,transparent_100%),radial-gradient(160px_160px_at_-10px_calc(100%+30px),rgba(204,251,241,0.8),transparent_100%)]">
-            <button type="button" onClick={onClose} aria-label="닫기" className="absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-lg text-slate-500 shadow-sm ring-1 ring-black/5 hover:bg-white">×</button>
+          <div className="relative overflow-hidden bg-[#f6f1e8] px-5 pb-6 pt-5 text-slate-900">
+            <div aria-hidden className="pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full bg-gradient-to-br from-red-200/70 via-orange-100/50 to-transparent blur-3xl" />
+            <div aria-hidden className="pointer-events-none absolute -bottom-24 -left-16 h-48 w-48 rounded-full bg-teal-100/70 blur-3xl" />
+            <button type="button" onClick={onClose} aria-label="닫기" className="absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-white/70 text-lg text-slate-500 shadow-sm ring-1 ring-black/5 backdrop-blur hover:bg-white">×</button>
             <div className="relative flex items-center gap-4">
               <div className="relative shrink-0">
                 <div className="rounded-full bg-gradient-to-tr from-red-500 via-orange-300 to-teal-400 p-[3px] shadow-lg shadow-red-900/10">
