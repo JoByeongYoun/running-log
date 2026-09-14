@@ -628,6 +628,7 @@ export type Database = {
           group_id: string
           id: string
           memo: string | null
+          photos_purged_at: string | null
           status: Database["public"]["Enums"]["record_status"]
           submission_key: string
           updated_at: string
@@ -642,6 +643,7 @@ export type Database = {
           group_id: string
           id?: string
           memo?: string | null
+          photos_purged_at?: string | null
           status?: Database["public"]["Enums"]["record_status"]
           submission_key: string
           updated_at?: string
@@ -656,6 +658,7 @@ export type Database = {
           group_id?: string
           id?: string
           memo?: string | null
+          photos_purged_at?: string | null
           status?: Database["public"]["Enums"]["record_status"]
           submission_key?: string
           updated_at?: string
@@ -873,6 +876,10 @@ export type Database = {
       }
       mark_notifications_read: { Args: { p_ids: string[] }; Returns: undefined }
       mark_upload_ready: { Args: { p_upload_id: string }; Returns: undefined }
+      purge_expired_photos: {
+        Args: { p_keep?: string; p_limit?: number }
+        Returns: string[]
+      }
       regenerate_invite_code: { Args: { p_group_id: string }; Returns: string }
       rename_group: {
         Args: { p_group_id: string; p_name: string }
