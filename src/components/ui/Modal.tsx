@@ -10,6 +10,22 @@ export function Modal({ open, onClose, title, children, wide, bare }: Props) {
     if (!el) return;
     if (open && !el.open) el.showModal();
     if (!open && el.open) el.close();
+    if (!open) return;
+    // margin:auto 센터링은 소수점 좌표(예: top 529.75px)에 떨어지기 쉽고,
+    // iOS WebKit은 그 위의 스크롤 레이어를 반 픽셀 어긋난 채 합성해 글자가 흐려진다.
+    // 열릴 때(그리고 크기가 바뀔 때) 위치를 정수 픽셀로 스냅한다.
+    const snap = () => {
+      el.style.marginTop = el.style.marginLeft = el.style.marginBottom = el.style.marginRight = '';
+      const r = el.getBoundingClientRect();
+      el.style.marginTop = `${Math.round(r.top)}px`;
+      el.style.marginLeft = `${Math.round(r.left)}px`;
+      el.style.marginBottom = el.style.marginRight = '0';
+    };
+    snap();
+    const ro = new ResizeObserver(snap);
+    ro.observe(el);
+    window.addEventListener('resize', snap);
+    return () => { ro.disconnect(); window.removeEventListener('resize', snap); };
   }, [open]);
   return (
     <dialog
