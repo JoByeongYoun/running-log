@@ -8,13 +8,9 @@ export function MyProgress({ data }: { data: WeekDashboard }) {
   const over = Math.max(0, me.approvedMeters - week.targetMeters);
   return (
     <section className="rounded-2xl border border-slate-200 p-4">
-      <div className="flex items-baseline justify-between">
-        <p className="text-sm text-slate-500">주간 목표 <b className="text-slate-900">{formatMeters(week.targetMeters)} km</b></p>
-        <p className="text-xs text-slate-500">벌칙: {week.penalty}</p>
-      </div>
       {me.inWeek ? (
         <>
-          <div className="mt-3 flex items-end justify-between">
+          <div className="flex items-end justify-between">
             <p className="text-2xl font-bold">{formatMeters(me.approvedMeters)} <span className="text-sm font-normal text-slate-500">km 승인</span></p>
             <p className="text-sm text-slate-600">{remaining > 0 ? `남은 ${formatMeters(remaining)} km` : `목표 달성${over > 0 ? ` · +${formatMeters(over)} km 초과` : ''}`}</p>
           </div>
@@ -28,7 +24,7 @@ export function MyProgress({ data }: { data: WeekDashboard }) {
           {!me.eligible && <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800">이번 주는 준비 주간입니다. 기록은 남지만 순위·성공/실패 평가에서 제외되고, 다음 주부터 평가됩니다.</p>}
         </>
       ) : (
-        <p className="mt-3 text-sm text-slate-500">이 주에는 참여 이력이 없습니다.</p>
+        <p className="text-sm text-slate-500">이 주에는 참여 이력이 없습니다.</p>
       )}
     </section>
   );
