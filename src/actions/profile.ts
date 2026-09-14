@@ -55,7 +55,7 @@ export async function updateProfile(_prev: ActionState, formData: FormData): Pro
   }
   const { error } = await supabase.from('profiles').update(patch).eq('id', user.id);
   if (error) return { error: '프로필 저장에 실패했습니다.' };
-  revalidatePath('/');
+  revalidatePath('/'); revalidatePath('/group');
   revalidatePath('/profile');
   return { success: '저장했습니다.' };
 }

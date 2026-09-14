@@ -47,13 +47,14 @@ test('signup → group → invite → record → approve → dashboard', async (
   await expect(owner.getByText('대기 중인 참여 요청이 없습니다')).toBeVisible();
 
   // member submits a record
-  await member.goto('/');
+  await member.goto('/record');
   await expect(member.getByRole('heading', { name: 'E2E 러너' })).toBeVisible();
   await member.getByLabel('거리 (km)').fill('5.25');
   await member.getByLabel('사진 선택').setInputFiles(PHOTO);
   await expect(member.getByText('완료')).toBeVisible();
   await member.getByRole('button', { name: '오늘 기록 제출' }).click();
   await expect(member.getByText('기록을 등록했습니다. 관리자 승인을 기다려 주세요.')).toBeVisible();
+  await member.waitForURL('/');
   await expect(member.getByText('승인 대기 5.25 km (합계 미포함)')).toBeVisible();
 
   // owner reviews
