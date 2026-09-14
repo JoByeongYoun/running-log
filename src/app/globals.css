@@ -19,12 +19,12 @@ body {
 input, textarea, select, button { font: inherit; }
 
 /* ── 주간 트랙 (WeekTrack): 스타디움 + 육상 트랙 ─────────── */
-/* 어두운 스타디움 바닥: 은은한 스포트라이트 */
+/* 잔디 인필드: 깎은 줄무늬 + 가장자리 살짝 어둡게 */
 .track-stadium {
-  background-color: #0f172a;
+  background-color: #4cae4f;
   background-image:
-    radial-gradient(120% 80% at 50% 0%, rgba(56, 189, 248, 0.14), transparent 60%),
-    radial-gradient(80% 60% at 50% 100%, rgba(163, 230, 53, 0.08), transparent 60%);
+    radial-gradient(120% 90% at 50% 40%, rgba(255, 255, 255, 0.10), rgba(0, 0, 0, 0.10)),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.09) 0 26px, transparent 26px 52px);
 }
 /* 붉은 타탄 표면: 미세한 입자 질감 */
 .track-surface {
@@ -65,9 +65,13 @@ input, textarea, select, button { font: inherit; }
   background-size: 6px 6px;
   background-position: 0 0, 3px 3px;
 }
-/* 내 러너: 라임 후광 */
+/* 내 러너: 노란 후광 */
 .track-runner-me {
-  box-shadow: 0 0 0 2px #a3e635, 0 0 14px rgba(163, 230, 53, 0.8);
+  box-shadow: 0 0 0 2px #fde047, 0 0 12px rgba(253, 224, 71, 0.9);
+}
+/* 잔디 위 글자: 가독성용 그림자 */
+.track-text {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
 }
 @keyframes track-bob {
   0%, 100% { transform: translateY(0); }
