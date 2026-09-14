@@ -18,12 +18,56 @@ body {
 }
 input, textarea, select, button { font: inherit; }
 
-/* ── 주간 트랙 (WeekTrack) ─────────────────────────────── */
-.track-seg-pending {
-  background-image: repeating-linear-gradient(135deg, #fbbf24 0 5px, #fde68a 5px 10px);
+/* ── 주간 트랙 (WeekTrack): 스타디움 + 육상 트랙 ─────────── */
+/* 어두운 스타디움 바닥: 은은한 스포트라이트 */
+.track-stadium {
+  background-color: #0f172a;
+  background-image:
+    radial-gradient(120% 80% at 50% 0%, rgba(56, 189, 248, 0.14), transparent 60%),
+    radial-gradient(80% 60% at 50% 100%, rgba(163, 230, 53, 0.08), transparent 60%);
 }
+/* 붉은 타탄 표면: 미세한 입자 질감 */
+.track-surface {
+  background-color: #d5503a;
+  background-image:
+    radial-gradient(rgba(255, 255, 255, 0.10) 0.6px, transparent 0.6px),
+    radial-gradient(rgba(0, 0, 0, 0.12) 0.6px, transparent 0.6px);
+  background-size: 6px 6px, 7px 7px;
+  background-position: 0 0, 3px 4px;
+}
+/* 레인 사이 흰 구분선 */
+.track-lane + .track-lane {
+  border-top: 2px solid rgba(255, 255, 255, 0.8);
+}
+/* 승인 조각: 라임 발광 트레일 */
+.track-seg-approved {
+  background-image: linear-gradient(180deg, #d9f99d, #a3e635 60%, #84cc16);
+  box-shadow: 0 0 10px rgba(163, 230, 53, 0.55), inset 0 -1px 0 rgba(0, 0, 0, 0.12);
+}
+.track-seg-approved.is-alt {
+  background-image: linear-gradient(180deg, #ecfccb, #bef264 60%, #a3e635);
+}
+/* 승인 대기 조각: 노랑 빗금 */
+.track-seg-pending {
+  background-image: repeating-linear-gradient(135deg, #fde047 0 5px, #fff7cc 5px 10px);
+  box-shadow: 0 0 8px rgba(253, 224, 71, 0.45);
+}
+/* 결승선 너머 오버런 구간 */
 .track-overrun {
-  background-image: repeating-linear-gradient(135deg, transparent 0 4px, rgba(148, 163, 184, 0.25) 4px 6px);
+  background-image: repeating-linear-gradient(135deg, rgba(0, 0, 0, 0.14) 0 4px, transparent 4px 9px);
+}
+/* 체크무늬 결승선 */
+.track-finish {
+  background-color: #fff;
+  background-image:
+    linear-gradient(45deg, #0f172a 25%, transparent 25%, transparent 75%, #0f172a 75%),
+    linear-gradient(45deg, #0f172a 25%, transparent 25%, transparent 75%, #0f172a 75%);
+  background-size: 6px 6px;
+  background-position: 0 0, 3px 3px;
+}
+/* 내 러너: 라임 후광 */
+.track-runner-me {
+  box-shadow: 0 0 0 2px #a3e635, 0 0 14px rgba(163, 230, 53, 0.8);
 }
 @keyframes track-bob {
   0%, 100% { transform: translateY(0); }
