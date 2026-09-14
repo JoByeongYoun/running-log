@@ -69,7 +69,8 @@ input, textarea, select, button { font: inherit; }
 .track-runner-me {
   box-shadow: 0 0 0 2px #fde047, 0 0 12px rgba(253, 224, 71, 0.9);
 }
-/* 잔디 위 글자: 가독성용 그림자 */
+/* 잔디·타탄 위 흰 글자 전용 가독성 그림자. text-shadow 는 상속되므로 섹션 전체가 아니라
+   흰 글자 요소에만 건다 (닉네임 태그·구간 라벨·모달 같은 어두운 글자가 흐려지지 않게) */
 .track-text {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
 }
