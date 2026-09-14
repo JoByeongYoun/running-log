@@ -7,7 +7,6 @@ import { NoGroupHome } from '@/components/group/NoGroupHome';
 import { HomeHeader } from '@/components/layout/HomeHeader';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { WeekNav } from '@/components/dashboard/WeekNav';
-import { MyProgress } from '@/components/dashboard/MyProgress';
 import { WeekTrack } from '@/components/dashboard/WeekTrack';
 import { ScrollRestore } from '@/components/dashboard/ScrollRestore';
 import { SummaryAutoShow } from '@/components/summary/SummaryAutoShow';
@@ -71,7 +70,6 @@ export default async function HomePage({ searchParams }: PageProps<'/'>) {
               {!dash.data.week.isCurrent && <SummaryButton groupId={groupId} weekStart={weekStart} />}
             </div>
             <RejectedBanner data={dash.data} myId={session.user.id} />
-            <MyProgress data={dash.data} />
             <WeekTrack data={dash.data} myId={session.user.id} />
           </>
         )}
