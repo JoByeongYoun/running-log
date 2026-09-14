@@ -17,7 +17,8 @@ export function Modal({ open, onClose, title, children, wide, bare }: Props) {
       onClose={onClose}
       onClick={(e) => { if (e.target === ref.current) onClose(); }}
       aria-label={title}
-      className={`m-auto w-[calc(100%-2rem)] rounded-2xl p-0 shadow-xl backdrop:bg-black/50 ${wide ? 'max-w-2xl' : 'max-w-md'}`}
+      // text-shadow 는 상속된다. .track-text(주간 트랙) 안에서 열리는 모달의 글자에 그림자가 번지지 않게 차단.
+      className={`m-auto w-[calc(100%-2rem)] rounded-2xl p-0 shadow-xl backdrop:bg-black/50 [text-shadow:none] ${wide ? 'max-w-2xl' : 'max-w-md'}`}
     >
       <div className={`max-h-[85dvh] overflow-y-auto ${bare ? '' : 'p-5'}`}>
         {!bare && (
