@@ -41,8 +41,8 @@ export function WeekTrack({ data, myId }: { data: WeekDashboard; myId: string })
   const displayRank = new Map(assignRanks(data.members.map((m) => ({ userId: m.userId, totalMeters: m.approvedMeters }))).map((r) => [r.userId, r.rank]));
 
   return (
-    <section className="track-stadium track-text overflow-hidden rounded-2xl p-3 text-white shadow-md ring-1 ring-green-700/40 sm:p-4" aria-labelledby="week-track-title">
-      <div className="mb-3 flex items-center justify-between gap-2">
+    <section className="track-stadium overflow-hidden rounded-2xl p-3 text-white shadow-md ring-1 ring-green-700/40 sm:p-4" aria-labelledby="week-track-title">
+      <div className="track-text mb-3 flex items-center justify-between gap-2">
         <h2 id="week-track-title" className="flex items-center gap-1.5 font-bold tracking-tight">
           <span aria-hidden>🏟️</span> 주간 트랙
         </h2>
@@ -52,7 +52,7 @@ export function WeekTrack({ data, myId }: { data: WeekDashboard; myId: string })
       </div>
 
       {data.members.length === 0 ? (
-        <p className="py-4 text-center text-sm text-white/90">이 주에는 멤버가 없습니다.</p>
+        <p className="track-text py-4 text-center text-sm text-white/90">이 주에는 멤버가 없습니다.</p>
       ) : (
         <div className="flex items-stretch gap-2">
           {/* 순위 열: 확정된 주에만 메달을 보여준다 */}
@@ -159,7 +159,7 @@ function Lane({ member: m, lane, goalPct, targetMeters, isMe, ran, backParam, on
 
         {/* 거리 줄: 러너 아래 한 줄로 총 거리와 남은 거리 */}
         <div
-          className={`pointer-events-none absolute z-20 whitespace-nowrap rounded-md bg-black/30 px-1.5 py-0.5 text-[10px] font-bold tabular-nums leading-none transition-[left] duration-1000 ease-out motion-reduce:transition-none ${reachedGoal ? 'text-yellow-300' : 'text-white'}`}
+          className={`track-text pointer-events-none absolute z-20 whitespace-nowrap rounded-md bg-black/30 px-1.5 py-0.5 text-[10px] font-bold tabular-nums leading-none transition-[left] duration-1000 ease-out motion-reduce:transition-none ${reachedGoal ? 'text-yellow-300' : 'text-white'}`}
           style={{ left: runnerLeft, top: TRAIL_Y + AVATAR / 2 + 2, transform: `translateX(${tagShift})` }}
           aria-hidden
         >
