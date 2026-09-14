@@ -12,9 +12,11 @@ import { OUTCOME_LABEL, STATUS_LABEL, type MemberRow, type WeekDashboard } from 
 /** 이 비율보다 양 끝에 가까우면 닉네임 태그를 프로필 가장자리에 붙여 트랙 밖으로 나가지 않게 한다. */
 const TAG_EDGE_PCT = 14;
 /** 레인 높이(px)와 그 안에서 트레일 중심선의 y 위치 */
-const LANE_H = 54;
-const TRAIL_Y = 35;
+const LANE_H = 64;
+const TRAIL_Y = 33;
 const TRAIL_H = 14;
+/** 조각 안에 거리 라벨을 넣을 최소 폭(%) */
+const LABEL_MIN_PCT = 10;
 const AVATAR = 28;
 /** 트랙 좌우 여백: 프로필이 출발선·끝에서 절반씩 걸치는 공간 */
 const TRACK_PAD = AVATAR / 2 + 4;
@@ -35,6 +37,7 @@ export function WeekTrack({ data, myId }: { data: WeekDashboard; myId: string })
   const backParam = `?week=${data.week.weekStart}&from=home`;
   const track = buildTrack(data.members, data.week.targetMeters);
   // 판정용 순위(m.rank)는 준비 주간 멤버가 null이므로, 표시용 순위는 전체 멤버를 승인 거리로 매긴다.
+  const finalized = data.week.state === 'finalized';
   const displayRank = new Map(assignRanks(data.members.map((m) => ({ userId: m.userId, totalMeters: m.approvedMeters }))).map((r) => [r.userId, r.rank]));
 
   return (
@@ -52,14 +55,16 @@ export function WeekTrack({ data, myId }: { data: WeekDashboard; myId: string })
         <p className="py-4 text-center text-sm text-white/90">이 주에는 멤버가 없습니다.</p>
       ) : (
         <div className="flex items-stretch gap-2">
-          {/* 순위 열 */}
-          <ol className="flex w-7 shrink-0 flex-col pt-5" aria-hidden>
-            {data.members.map((m) => (
-              <li key={m.userId} className="flex items-start justify-center" style={{ height: LANE_H, paddingTop: TRAIL_Y - 10 }}>
-                <RankBadge rank={displayRank.get(m.userId)} />
-              </li>
-            ))}
-          </ol>
+          {/* 순위 열: 확정된 주에만 메달을 보여준다 */}
+          {finalized && (
+            <ol className="flex w-7 shrink-0 flex-col pt-5" aria-hidden>
+              {data.members.map((m) => (
+                <li key={m.userId} className="flex items-start justify-center" style={{ height: LANE_H, paddingTop: TRAIL_Y - 10 }}>
+                  <RankBadge rank={displayRank.get(m.userId)} />
+                </li>
+              ))}
+            </ol>
+          )}
 
           {/* 트랙 */}
           <div className="relative min-w-0 flex-1">
@@ -80,6 +85,7 @@ export function WeekTrack({ data, myId }: { data: WeekDashboard; myId: string })
                     member={m}
                     lane={track.lanes.get(m.userId)!}
                     goalPct={track.goalPct}
+                    targetMeters={data.week.targetMeters}
                     isMe={m.userId === myId}
                     ran={ran}
                     backParam={backParam}
@@ -90,12 +96,6 @@ export function WeekTrack({ data, myId }: { data: WeekDashboard; myId: string })
             </div>
           </div>
 
-          {/* 점수판 */}
-          <ol className="flex w-[3.6rem] shrink-0 flex-col pt-5 text-right" aria-hidden>
-            {data.members.map((m) => (
-              <Score key={m.userId} member={m} lane={track.lanes.get(m.userId)!} goalPct={track.goalPct} targetMeters={data.week.targetMeters} />
-            ))}
-          </ol>
         </div>
       )}
 
@@ -108,14 +108,16 @@ type LaneProps = {
   member: MemberRow;
   lane: TrackLane;
   goalPct: number;
+  targetMeters: number;
   isMe: boolean;
   ran: boolean;
   backParam: string;
   onOpenProfile: () => void;
 };
 
-function Lane({ member: m, lane, goalPct, isMe, ran, backParam, onOpenProfile }: LaneProps) {
+function Lane({ member: m, lane, goalPct, targetMeters, isMe, ran, backParam, onOpenProfile }: LaneProps) {
   const reachedGoal = m.approvedMeters > 0 && lane.approvedPct >= goalPct;
+  const remaining = Math.max(0, targetMeters - m.approvedMeters);
   const status = m.leftDuringWeek || !m.activeNow ? '탈퇴' : null;
   const anchor = lane.approvedPct < TAG_EDGE_PCT ? 'start' : lane.approvedPct > 100 - TAG_EDGE_PCT ? 'end' : 'center';
   const tagShift = anchor === 'start' ? `-${AVATAR / 2}px` : anchor === 'end' ? `calc(-100% + ${AVATAR / 2}px)` : '-50%';
@@ -135,14 +137,13 @@ function Lane({ member: m, lane, goalPct, isMe, ran, backParam, onOpenProfile }:
         <button
           type="button"
           onClick={onOpenProfile}
-          aria-label={`${m.nickname} 이번 주 기록 보기 · 승인 ${formatMeters(m.approvedMeters)} km${reachedGoal ? ' · 목표 달성' : ''}${status ? ` · ${status}` : ''}`}
+          aria-label={`${m.nickname} 이번 주 기록 보기 · 승인 ${formatMeters(m.approvedMeters)} km · ${reachedGoal ? '목표 달성' : `남은 ${formatMeters(remaining)} km`}${status ? ` · ${status}` : ''}`}
           className={`absolute z-20 -translate-x-1/2 -translate-y-1/2 rounded-full transition-[left] duration-1000 ease-out hover:scale-110 active:scale-95 motion-reduce:transition-none ${isMe ? 'track-runner-me' : 'shadow-[0_2px_6px_rgba(0,0,0,0.4)] ring-2 ring-white'}`}
           style={{ left: runnerLeft, top: TRAIL_Y, width: AVATAR, height: AVATAR }}
         >
           <span className={`block rounded-full ${isMe && ran ? 'track-bob' : ''}`}>
             <Avatar src={m.avatarUrl ?? null} name={m.nickname} size={AVATAR} />
           </span>
-          {reachedGoal && <span className="absolute -right-2 -top-2 text-sm leading-none drop-shadow" aria-hidden>🎉</span>}
           <span className="sr-only">{OUTCOME_LABEL[m.outcome]}</span>
         </button>
 
@@ -154,6 +155,18 @@ function Lane({ member: m, lane, goalPct, isMe, ran, backParam, onOpenProfile }:
         >
           {m.nickname}
           {status && <span className="text-[9px] font-medium opacity-70">{status}</span>}
+        </div>
+
+        {/* 거리 줄: 러너 아래 한 줄로 총 거리와 남은 거리 */}
+        <div
+          className={`pointer-events-none absolute z-20 whitespace-nowrap rounded-md bg-black/30 px-1.5 py-0.5 text-[10px] font-bold tabular-nums leading-none transition-[left] duration-1000 ease-out motion-reduce:transition-none ${reachedGoal ? 'text-yellow-300' : 'text-white'}`}
+          style={{ left: runnerLeft, top: TRAIL_Y + AVATAR / 2 + 2, transform: `translateX(${tagShift})` }}
+          aria-hidden
+        >
+          {formatMeters(m.approvedMeters)}
+          <span className={`ml-1 font-semibold ${reachedGoal ? 'text-yellow-200' : 'text-white/80'}`}>
+            {reachedGoal ? (lane.overMeters > 0 ? `+${formatMeters(lane.overMeters)} 🎉` : 'GOAL! 🎉') : `${formatMeters(remaining)} 남음`}
+          </span>
         </div>
       </div>
     </li>
@@ -174,20 +187,13 @@ function Segment({ seg, index, count, nickname, ran, href }: { seg: TrackSegment
       <span
         className={`absolute inset-x-0 top-1/2 origin-left border-r-2 border-[#d5503a]/70 transition-transform duration-1000 ease-out group-hover:brightness-110 group-focus-visible:ring-2 group-focus-visible:ring-white motion-reduce:transition-none ${tone} ${index === 0 ? 'rounded-l-full' : ''} ${index === count - 1 ? 'rounded-r-full border-r-0' : ''}`}
         style={{ height: TRAIL_H, transform: `translateY(-50%) scaleX(${ran ? 1 : 0})`, transitionDelay: `${Math.min(index, 6) * 90}ms` }}
-      />
-    </Link>
-  );
-}
-
-function Score({ member: m, lane, goalPct, targetMeters }: { member: MemberRow; lane: TrackLane; goalPct: number; targetMeters: number }) {
-  const reachedGoal = m.approvedMeters > 0 && lane.approvedPct >= goalPct;
-  const remaining = Math.max(0, targetMeters - m.approvedMeters);
-  return (
-    <li className="flex flex-col items-end justify-start leading-none" style={{ height: LANE_H, paddingTop: TRAIL_Y - 14 }}>
-      <span className={`text-sm font-black tabular-nums ${reachedGoal ? 'text-yellow-300' : 'text-white'}`}>{formatMeters(m.approvedMeters)}</span>
-      <span className={`mt-1 text-[9px] font-semibold tabular-nums ${reachedGoal ? 'text-yellow-200' : 'text-white/80'}`}>
-        {reachedGoal ? (lane.overMeters > 0 ? `+${formatMeters(lane.overMeters)}` : 'GOAL!') : `${formatMeters(remaining)} 남음`}
+      >
+        {seg.widthPct >= LABEL_MIN_PCT && (
+          <span className="absolute inset-0 flex items-center justify-center truncate px-1 text-[9px] font-bold leading-none text-lime-950/80" aria-hidden>
+            {formatMeters(seg.meters)}
+          </span>
+        )}
       </span>
-    </li>
+    </Link>
   );
 }
