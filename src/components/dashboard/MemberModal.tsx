@@ -38,8 +38,8 @@ export function MemberModal({ member, data, isMe, onClose }: Props) {
   const records = m?.days.flatMap((d) => d.records.map((r) => ({ ...r, date: d.date }))) ?? [];
   const backParam = `?week=${data.week.weekStart}&from=home`;
   const finalized = data.week.state === 'finalized';
-  const outcomeLabel = m ? (m.joinedThisWeek ? '준비 주간' : finalized ? OUTCOME_LABEL[m.outcome] : '') : '';
-  const outcomeKey: Outcome = m ? (m.joinedThisWeek ? 'not_evaluated' : m.outcome) : 'not_evaluated';
+  const outcomeLabel = m ? (m.resting ? '휴식 · 평가 제외' : m.joinedThisWeek ? '준비 주간' : finalized ? OUTCOME_LABEL[m.outcome] : '') : '';
+  const outcomeKey: Outcome = m ? (m.resting || m.joinedThisWeek ? 'not_evaluated' : m.outcome) : 'not_evaluated';
 
   return (
     <Modal open={Boolean(m)} onClose={onClose} title={m ? `${m.nickname} 이번 주 기록` : ''} bare>
@@ -56,10 +56,10 @@ export function MemberModal({ member, data, isMe, onClose }: Props) {
                   <div className="rounded-full bg-[#fdfaef] p-[2px]">
                     {m.avatarUrl ? (
                       <button type="button" onClick={() => setAvatarOpen(true)} aria-label={`${m.nickname} 프로필 사진 확대`} className="block rounded-full">
-                        <Avatar src={m.avatarUrl} name={m.nickname} size={72} />
+                        <Avatar src={m.avatarUrl} name={m.nickname} size={72} resting={m.resting} />
                       </button>
                     ) : (
-                      <Avatar src={null} name={m.nickname} size={72} />
+                      <Avatar src={null} name={m.nickname} size={72} resting={m.resting} />
                     )}
                   </div>
                 </div>

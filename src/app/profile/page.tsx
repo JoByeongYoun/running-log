@@ -5,13 +5,17 @@ import { ProfileForm } from './ProfileForm';
 import { AppHeader } from '@/components/layout/AppHeader';
 import { PushSection } from './PushSection';
 import { LeaveGroupSection } from './LeaveGroupSection';
+import { RestSection } from './RestSection';
+import { getGroupState } from '@/lib/group-state';
 
 export default async function ProfilePage() {
   const session = await getSessionUser();
   if (!session || !session.profile) redirect('/login');
   const avatarUrl = await signedUrl('avatars', session.profile.avatar_path);
-  const { data: membership } = await session.supabase
-    .from('memberships').select('group_id, role, groups(name)').is('left_at', null).maybeSingle();
+  const [{ data: membership }, state] = await Promise.all([
+    session.supabase.from('memberships').select('group_id, role, groups(name)').is('left_at', null).maybeSingle(),
+    getGroupState(session.supabase),
+  ]);
   const { count: otherMembers } = membership
     ? await session.supabase.from('memberships').select('id', { count: 'exact', head: true }).eq('group_id', membership.group_id).is('left_at', null).neq('user_id', session.user.id)
     : { count: 0 };
@@ -21,6 +25,12 @@ export default async function ProfilePage() {
       <main className="mx-auto w-full max-w-md space-y-8 px-5 py-6">
         <ProfileForm userId={session.user.id} nickname={session.profile.nickname ?? ''} avatarUrl={avatarUrl} />
         <PushSection />
+        <RestSection
+          groupName={membership?.groups?.name ?? null}
+          resting={state.membership?.resting ?? false}
+          restStartedAt={state.membership?.restStartedAt ?? null}
+          pendingRequest={state.pendingRestRequest}
+        />
         <LeaveGroupSection
           groupName={membership?.groups?.name ?? null}
           isAdmin={membership?.role === 'admin'}

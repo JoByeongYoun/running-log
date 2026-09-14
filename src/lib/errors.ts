@@ -9,6 +9,8 @@ const MESSAGES: Record<string, string> = {
   invalid_invite: '초대 코드가 올바르지 않습니다.',
   transfer_required: '다른 멤버에게 관리자 권한을 위임한 뒤 탈퇴할 수 있습니다.',
   not_member: '그룹 멤버가 아닙니다.',
+  already_resting: '이미 휴식 중입니다.',
+  not_resting: '휴식 중이 아닙니다.',
   week_not_open: '이번 주 기록을 등록할 수 없는 상태입니다.',
   week_finalized: '이미 확정된 주차입니다.',
   review_closed: '검토 기한이 지났습니다.',

@@ -10,6 +10,13 @@ describe('notificationText', () => {
     expect(notificationText(view('join_request', { nickname: '민수' }))).toBe('민수님이 참여를 요청했습니다.');
     expect(notificationText(view('join_result', { status: 'approved', groupName: '새벽런' }))).toBe('새벽런 참여가 승인되었습니다.');
     expect(notificationText(view('join_result', { status: 'rejected', groupName: '새벽런' }))).toBe('새벽런 참여 요청이 거절되었습니다.');
+    expect(notificationText(view('rest_request', { nickname: '민수', reason: '출장' }))).toBe('민수님이 휴식을 신청했습니다. (출장)');
+    expect(notificationText(view('rest_request', { nickname: '민수' }))).toBe('민수님이 휴식을 신청했습니다.');
+    expect(notificationText(view('rest_result', { status: 'approved' }))).toBe('휴식 신청이 승인되었습니다. 휴식 중에는 주간 평가에서 제외됩니다.');
+    expect(notificationText(view('rest_result', { status: 'rejected' }))).toBe('휴식 신청이 거절되었습니다.');
+    expect(notificationText(view('rest_changed', { status: 'started', self: true }))).toBe('관리자가 휴식 상태로 변경했습니다. 휴식 중에는 주간 평가에서 제외됩니다.');
+    expect(notificationText(view('rest_changed', { status: 'ended', self: true }))).toBe('휴식이 종료되었습니다. 이번 주부터 다시 평가 대상입니다.');
+    expect(notificationText(view('rest_changed', { status: 'ended', self: false, nickname: '민수' }))).toBe('민수님이 휴식을 마치고 복귀했습니다.');
     expect(notificationText(view('record_submitted', { nickname: '민수', meters: 5000 }))).toBe('민수님이 5.00km 기록을 제출했습니다.');
     expect(notificationText(view('record_review', { status: 'approved', meters: 5000 }))).toBe('5.00km 기록이 승인되었습니다.');
     expect(notificationText(view('record_review', { status: 'rejected', reason: '흐림', meters: 5000 }))).toBe('5.00km 기록이 반려되었습니다 (흐림).');

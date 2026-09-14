@@ -9,6 +9,7 @@ import type { WeekSummary, MemberRow } from '@/lib/dashboard/types';
 export const PAGE_SIZE = 12;
 
 function outcomeText(m: MemberRow): string {
+  if (m.resting) return '휴식';
   if (m.joinedThisWeek || !m.eligible) return '준비 주간';
   switch (m.outcome) {
     case 'success': case 'provisional_success': return '성공';
@@ -26,7 +27,8 @@ export const SummaryCard = forwardRef<HTMLDivElement, { summary: WeekSummary; pa
   const displayRank = new Map(assignRanks(members.map((m) => ({ userId: m.userId, totalMeters: m.approvedMeters }))).map((r) => [r.userId, r.rank]));
   const successes = members.filter((m) => m.eligible && (m.outcome === 'success' || m.outcome === 'provisional_success'));
   const failures = members.filter((m) => m.eligible && (m.outcome === 'fail' || m.outcome === 'provisional_fail'));
-  const preps = members.filter((m) => !m.eligible);
+  const rests = members.filter((m) => m.resting);
+  const preps = members.filter((m) => !m.eligible && !m.resting);
   return (
     <div ref={ref} className="w-full rounded-2xl bg-white p-5 text-slate-900" style={{ fontFamily: 'inherit' }}>
       <div className="flex items-start justify-between">
@@ -47,7 +49,7 @@ export const SummaryCard = forwardRef<HTMLDivElement, { summary: WeekSummary; pa
         {slice.map((m) => (
           <li key={m.userId} className={`flex items-center gap-2 py-1.5 text-sm ${m.userId === myUserId ? 'font-semibold' : ''}`}>
             <span className="flex w-8 justify-center"><RankBadge rank={displayRank.get(m.userId)} /></span>
-            <Avatar src={m.avatarUrl ?? null} name={m.nickname} size={24} />
+            <Avatar src={m.avatarUrl ?? null} name={m.nickname} size={24} resting={m.resting} />
             <span className="min-w-0 flex-1 truncate">{m.nickname}{m.leftDuringWeek || !m.activeNow ? <span className="ml-1 text-xs font-normal text-slate-400">탈퇴</span> : null}</span>
             <span className="tabular-nums">{formatMeters(m.approvedMeters)} km</span>
             <span className={`w-14 text-right text-xs ${outcomeText(m) === '성공' ? 'text-emerald-700' : outcomeText(m) === '실패' ? 'text-red-600' : 'text-slate-500'}`}>{outcomeText(m)}</span>
@@ -63,6 +65,7 @@ export const SummaryCard = forwardRef<HTMLDivElement, { summary: WeekSummary; pa
             <p><span className="text-slate-500">성공</span> {successes.map((m) => m.nickname).join(', ') || '없음'}</p>
             <p><span className="text-slate-500">실패</span> {failures.map((m) => m.nickname).join(', ') || '없음'}</p>
             {preps.length > 0 && <p><span className="text-slate-500">준비 주간</span> {preps.map((m) => m.nickname).join(', ')}</p>}
+            {rests.length > 0 && <p><span className="text-slate-500">휴식</span> {rests.map((m) => m.nickname).join(', ')}</p>}
           </div>
         </div>
       )}

@@ -17,9 +17,10 @@ export async function loadTabShell() {
 }
 
 async function countAdminPending(supabase: Client, groupId: string): Promise<number> {
-  const [{ count: a }, { count: b }] = await Promise.all([
+  const [{ count: a }, { count: b }, { count: c }] = await Promise.all([
     supabase.from('join_requests').select('id', { count: 'exact', head: true }).eq('group_id', groupId).eq('status', 'pending'),
     supabase.from('running_records').select('id', { count: 'exact', head: true }).eq('group_id', groupId).eq('status', 'pending'),
+    supabase.from('rest_requests').select('id', { count: 'exact', head: true }).eq('group_id', groupId).eq('status', 'pending'),
   ]);
-  return (a ?? 0) + (b ?? 0);
+  return (a ?? 0) + (b ?? 0) + (c ?? 0);
 }

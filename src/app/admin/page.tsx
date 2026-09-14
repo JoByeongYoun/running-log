@@ -6,6 +6,7 @@ import { signedUrls } from '@/lib/storage/signed-url';
 import { weekStartOf } from '@/lib/domain/week';
 import { AppHeader } from '@/components/layout/AppHeader';
 import { JoinRequests, type JoinRequestItem } from '@/components/admin/JoinRequests';
+import { RestRequests, type RestRequestItem } from '@/components/admin/RestRequests';
 import { MemberList, type MemberItem } from '@/components/admin/MemberList';
 import { GroupSettings } from '@/components/admin/GroupSettings';
 import { ReviewQueue } from '@/components/admin/ReviewQueue';
@@ -29,24 +30,30 @@ export default async function AdminPage({ searchParams }: PageProps<'/admin'>) {
   const groupId = state.membership.groupId;
   const supabase = session.supabase;
 
-  const [{ data: requests }, { data: members }, { count: pendingRecords }] = await Promise.all([
+  const [{ data: requests }, { data: restRequests }, { data: members }, { count: pendingRecords }] = await Promise.all([
     supabase.from('join_requests').select('id, user_id, created_at, profiles!join_requests_user_id_fkey(nickname, avatar_path)').eq('group_id', groupId).eq('status', 'pending').order('created_at'),
-    supabase.from('memberships').select('user_id, role, joined_at, profiles(nickname, avatar_path)').eq('group_id', groupId).is('left_at', null).order('joined_at'),
+    supabase.from('rest_requests').select('id, user_id, reason, created_at, profiles!rest_requests_user_id_fkey(nickname, avatar_path)').eq('group_id', groupId).eq('status', 'pending').order('created_at'),
+    supabase.from('memberships').select('user_id, role, joined_at, rest_started_at, profiles(nickname, avatar_path)').eq('group_id', groupId).is('left_at', null).order('joined_at'),
     supabase.from('running_records').select('id', { count: 'exact', head: true }).eq('group_id', groupId).eq('status', 'pending'),
   ]);
-  const avatarPaths = [...(requests ?? []).map((r) => r.profiles?.avatar_path), ...(members ?? []).map((m) => m.profiles?.avatar_path)].filter((p): p is string => Boolean(p));
+  const avatarPaths = [...(requests ?? []).map((r) => r.profiles?.avatar_path), ...(restRequests ?? []).map((r) => r.profiles?.avatar_path), ...(members ?? []).map((m) => m.profiles?.avatar_path)].filter((p): p is string => Boolean(p));
   const urls = await signedUrls('avatars', avatarPaths);
 
   const requestItems: JoinRequestItem[] = (requests ?? []).map((r) => ({
     id: r.id, userId: r.user_id, nickname: r.profiles?.nickname ?? '(이름 없음)',
     avatarUrl: r.profiles?.avatar_path ? urls.get(r.profiles.avatar_path) ?? null : null, createdAt: r.created_at,
   }));
+  const restItems: RestRequestItem[] = (restRequests ?? []).map((r) => ({
+    id: r.id, userId: r.user_id, reason: r.reason, nickname: r.profiles?.nickname ?? '(이름 없음)',
+    avatarUrl: r.profiles?.avatar_path ? urls.get(r.profiles.avatar_path) ?? null : null, createdAt: r.created_at,
+  }));
   const memberItems: MemberItem[] = (members ?? []).map((m) => ({
     userId: m.user_id, role: m.role, joinedAt: m.joined_at, nickname: m.profiles?.nickname ?? '(이름 없음)',
     avatarUrl: m.profiles?.avatar_path ? urls.get(m.profiles.avatar_path) ?? null : null,
+    resting: m.rest_started_at != null, restStartedAt: m.rest_started_at,
   }));
 
-  const counts: Partial<Record<TabKey, number>> = { requests: requestItems.length, reviews: pendingRecords ?? 0 };
+  const counts: Partial<Record<TabKey, number>> = { requests: requestItems.length + restItems.length, reviews: pendingRecords ?? 0 };
 
   return (
     <>
@@ -64,7 +71,7 @@ export default async function AdminPage({ searchParams }: PageProps<'/admin'>) {
         </ul>
       </nav>
       <main className="mx-auto w-full max-w-md px-4 py-4">
-        {tab === 'requests' && <JoinRequests items={requestItems} />}
+        {tab === 'requests' && (<><JoinRequests items={requestItems} /><RestRequests items={restItems} /></>)}
         {tab === 'reviews' && <ReviewQueue groupId={groupId} />}
         {tab === 'members' && (
           <MemberList groupId={groupId} members={memberItems} myId={session.user.id} initialInvite={invite} siteUrl={(process.env.NEXT_PUBLIC_SITE_URL ?? '').replace(/\/+$/, '')} />

@@ -118,7 +118,7 @@ type LaneProps = {
 function Lane({ member: m, lane, goalPct, targetMeters, isMe, ran, backParam, onOpenProfile }: LaneProps) {
   const reachedGoal = m.approvedMeters > 0 && lane.approvedPct >= goalPct;
   const remaining = Math.max(0, targetMeters - m.approvedMeters);
-  const status = m.leftDuringWeek || !m.activeNow ? '탈퇴' : null;
+  const status = m.leftDuringWeek || !m.activeNow ? '탈퇴' : m.resting ? '휴식' : null;
   const anchor = lane.approvedPct < TAG_EDGE_PCT ? 'start' : lane.approvedPct > 100 - TAG_EDGE_PCT ? 'end' : 'center';
   const tagShift = anchor === 'start' ? `-${AVATAR / 2}px` : anchor === 'end' ? `calc(-100% + ${AVATAR / 2}px)` : '-50%';
   const runnerLeft = ran ? `${lane.approvedPct}%` : '0%';
@@ -142,7 +142,7 @@ function Lane({ member: m, lane, goalPct, targetMeters, isMe, ran, backParam, on
           style={{ left: runnerLeft, top: TRAIL_Y, width: AVATAR, height: AVATAR }}
         >
           <span className={`block rounded-full ${isMe && ran ? 'track-bob' : ''}`}>
-            <Avatar src={m.avatarUrl ?? null} name={m.nickname} size={AVATAR} />
+            <Avatar src={m.avatarUrl ?? null} name={m.nickname} size={AVATAR} resting={m.resting} />
           </span>
           <span className="sr-only">{OUTCOME_LABEL[m.outcome]}</span>
         </button>
