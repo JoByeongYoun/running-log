@@ -21,21 +21,27 @@ export default async function RecordPage({ params, searchParams }: PageProps<'/r
   const session = await getSessionUser();
   if (!session) redirect('/login');
   const supabase = session.supabase;
-  const state = await getGroupState(supabase);
+  // 서로 독립인 조회는 한 번에 보내 왕복 횟수를 줄인다 (그룹 상태 · 기록 · 댓글).
+  const [state, { data: rec }, { data: comments }] = await Promise.all([
+    getGroupState(supabase),
+    supabase
+      .from('running_records')
+      .select('id, user_id, activity_date, distance_meters, memo, status, version, created_at, updated_at, photos_purged_at, group_weeks(week_start, state), profiles!running_records_user_id_fkey(nickname, avatar_path), record_photos(id, storage_path, order_index), record_reviews(id, to_status, reason, created_at, actor_id)')
+      .eq('id', id)
+      .maybeSingle(),
+    supabase
+      .from('comments').select('id, user_id, body, created_at, deleted_at, profiles!comments_user_id_fkey(nickname, avatar_path)')
+      .eq('record_id', id).is('deleted_at', null).order('created_at'),
+  ]);
   if (!state.membership) redirect('/');
-
-  const { data: rec } = await supabase
-    .from('running_records')
-    .select('id, user_id, activity_date, distance_meters, memo, status, version, created_at, updated_at, photos_purged_at, group_weeks(week_start, state), profiles!running_records_user_id_fkey(nickname, avatar_path), record_photos(id, storage_path, order_index), record_reviews(id, to_status, reason, created_at, actor_id)')
-    .eq('id', id)
-    .maybeSingle();
   if (!rec) notFound();
 
   const back = typeof sp.week === 'string' && isValidYmd(sp.week) && sp.from === 'home' ? `/?week=${mondayOf(sp.week)}` : '/';
   const photos = [...rec.record_photos].sort((a, b) => a.order_index - b.order_index);
+  const avatarPaths = [rec.profiles?.avatar_path, ...(comments ?? []).map((c) => c.profiles?.avatar_path)].filter((p): p is string => Boolean(p));
   const [photoUrls, avatarUrls] = await Promise.all([
     signedUrls('evidence', photos.map((p) => p.storage_path)),
-    signedUrls('avatars', rec.profiles?.avatar_path ? [rec.profiles.avatar_path] : []),
+    signedUrls('avatars', avatarPaths),
   ]);
   const reviews = [...rec.record_reviews].sort((a, b) => a.created_at.localeCompare(b.created_at));
   const last = reviews[reviews.length - 1];
@@ -46,11 +52,6 @@ export default async function RecordPage({ params, searchParams }: PageProps<'/r
   const weekFinal = rec.group_weeks?.state === 'finalized';
   const photoItems = photos.map((p) => ({ id: p.id, url: photoUrls.get(p.storage_path) ?? '' }));
   const editable = { id: rec.id, distance: formatMeters(rec.distance_meters), memo: rec.memo ?? '', version: rec.version, status: rec.status };
-
-  const { data: comments } = await supabase
-    .from('comments').select('id, user_id, body, created_at, deleted_at, profiles!comments_user_id_fkey(nickname, avatar_path)')
-    .eq('record_id', id).is('deleted_at', null).order('created_at');
-  const commentAvatars = await signedUrls('avatars', (comments ?? []).map((c) => c.profiles?.avatar_path).filter((p): p is string => Boolean(p)));
 
   const statusTone = { pending: 'bg-amber-100 text-amber-800', approved: 'bg-emerald-100 text-emerald-800', rejected: 'bg-red-100 text-red-700', expired: 'bg-slate-200 text-slate-600' }[rec.status];
 
@@ -105,7 +106,7 @@ export default async function RecordPage({ params, searchParams }: PageProps<'/r
           comments={(comments ?? []).map((c) => ({
             id: c.id, userId: c.user_id, body: c.body, createdAt: c.created_at,
             nickname: c.profiles?.nickname ?? '(이름 없음)',
-            avatarUrl: c.profiles?.avatar_path ? commentAvatars.get(c.profiles.avatar_path) ?? null : null,
+            avatarUrl: c.profiles?.avatar_path ? avatarUrls.get(c.profiles.avatar_path) ?? null : null,
           }))}
         />
         <p className="pb-6 text-center"><Link href={back} className="text-sm underline">메인으로</Link></p>
