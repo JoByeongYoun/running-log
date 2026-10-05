@@ -1,3 +1,5 @@
+import type { RunnerType } from '@/lib/domain/runner-type';
+
 export type RecordStatus = 'pending' | 'approved' | 'rejected' | 'expired';
 export type WeekState = 'open' | 'closing' | 'finalized';
 export type Outcome = 'success' | 'fail' | 'not_evaluated' | 'provisional_success' | 'provisional_fail' | 'pending_review';
@@ -18,10 +20,11 @@ export type MemberRow = {
   joinedThisWeek: boolean;
   leftDuringWeek: boolean;
   activeNow: boolean;
-  /** 이 주 스냅샷에서 휴식 중(평가 제외) */
-  resting: boolean;
-  /** 현재 시점 휴식 중 */
-  restingNow: boolean;
+  runnerType: RunnerType;
+  /** 유형별 목표(m). 부상은 null */
+  goalMeters: number | null;
+  /** 잠정(진행 중) 또는 확정 벌금(원) */
+  penaltyWon: number;
   approvedMeters: number;
   pendingMeters: number;
   rank: number | null;
@@ -31,10 +34,11 @@ export type MemberRow = {
 
 export type WeekDashboard = {
   week: {
-    id: string; weekStart: string; state: WeekState; targetMeters: number; penalty: string;
+    id: string; weekStart: string; state: WeekState; targetMeters: number; penalty: string | null;
+    freeMinMeters: number; penaltyPerKmWon: number; zeroKmPenaltyWon: number;
     finalizedAt: string | null; groupName: string; groupTotalMeters: number | null; isCurrent: boolean;
   };
-  me: { approvedMeters: number; pendingMeters: number; eligible: boolean; resting: boolean; inWeek: boolean };
+  me: { approvedMeters: number; pendingMeters: number; eligible: boolean; inWeek: boolean; runnerType: RunnerType; goalMeters: number | null; penaltyWon: number };
   members: MemberRow[];
   pendingCount: number;
   provisional: boolean;
@@ -45,11 +49,12 @@ export type WeekSummary = WeekDashboard & {
   successCount: number;
   evaluatedCount: number;
   groupTotalMeters: number;
+  penaltyTotalWon: number;
   myUserId: string;
 };
 
 export const OUTCOME_LABEL: Record<Outcome, string> = {
-  success: '성공', fail: '실패', not_evaluated: '준비 주간',
+  success: '성공', fail: '실패', not_evaluated: '평가 제외',
   provisional_success: '성공 예정', provisional_fail: '실패 예정', pending_review: '판정 대기',
 };
 

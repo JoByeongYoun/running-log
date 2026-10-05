@@ -9,10 +9,14 @@ export const NICKNAME_MIN = 2;
 export const NICKNAME_MAX = 20;
 export const GROUP_NAME_MIN = 2;
 export const GROUP_NAME_MAX = 30;
-export const PENALTY_MIN = 1;
+
 export const PENALTY_MAX = 500;
 export const MEMO_MAX = 1000;
 export const COMMENT_MAX = 1000;
 // 아바타 서명 URL 만료. 탭 복귀·라우터 캐시 재사용 시 이미지가 지연 로드되므로 짧으면 일괄 깨진다.
 export const SIGNED_URL_TTL_SECONDS = 60 * 60;
 export const TZ = 'Asia/Seoul';
+export const MAX_WON = 10_000_000;
+export const DEFAULT_FREE_MIN_METERS = 5_000;
+export const DEFAULT_PENALTY_PER_KM_WON = 10_000;
+export const DEFAULT_ZERO_KM_PENALTY_WON = 100_000;

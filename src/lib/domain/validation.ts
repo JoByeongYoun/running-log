@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import {
-  COMMENT_MAX, GROUP_NAME_MAX, GROUP_NAME_MIN, MAX_PHOTOS, MAX_TARGET_METERS, MEMO_MAX,
-  NICKNAME_MAX, NICKNAME_MIN, PENALTY_MAX, PENALTY_MIN,
+  COMMENT_MAX, GROUP_NAME_MAX, GROUP_NAME_MIN, MAX_PHOTOS, MAX_TARGET_METERS, MAX_WON, MEMO_MAX,
+  NICKNAME_MAX, NICKNAME_MIN, PENALTY_MAX,
 } from './constants';
 import { parseDistanceToMeters } from './distance';
 
@@ -13,9 +13,17 @@ export const nicknameSchema = z.string().trim()
 export const groupNameSchema = z.string().trim()
   .min(GROUP_NAME_MIN, `그룹명은 ${GROUP_NAME_MIN}~${GROUP_NAME_MAX}자입니다.`)
   .max(GROUP_NAME_MAX, `그룹명은 ${GROUP_NAME_MIN}~${GROUP_NAME_MAX}자입니다.`);
-export const penaltySchema = z.string().trim()
-  .min(PENALTY_MIN, '벌칙을 입력하세요. 없으면 "없음"을 입력합니다.')
-  .max(PENALTY_MAX, `벌칙은 ${PENALTY_MAX}자 이하입니다.`);
+/** 선택 메모. 빈 문자열은 null. */
+export const penaltyNoteSchema = z.string().trim().max(PENALTY_MAX, `벌칙 메모는 ${PENALTY_MAX}자 이하입니다.`).transform((v) => (v === '' ? null : v));
+
+/** 원 단위 금액. "10,000" 같은 천 단위 구분 허용. */
+export const wonSchema = z.string().trim().transform((v, ctx) => {
+  const digits = v.replace(/,/g, '');
+  if (!/^\d+$/.test(digits)) { ctx.addIssue({ code: 'custom', message: '금액은 0 이상의 정수(원)로 입력하세요.' }); return z.NEVER; }
+  const n = Number(digits);
+  if (n > MAX_WON) { ctx.addIssue({ code: 'custom', message: `금액은 ${MAX_WON.toLocaleString('ko-KR')}원 이하여야 합니다.` }); return z.NEVER; }
+  return n;
+});
 export const memoSchema = z.string().trim().max(MEMO_MAX, `메모는 ${MEMO_MAX}자 이하입니다.`);
 export const commentSchema = z.string().trim().min(1, '댓글을 입력하세요.').max(COMMENT_MAX, `댓글은 ${COMMENT_MAX}자 이하입니다.`);
 export const reasonSchema = z.string().trim().min(1, '사유를 입력하세요.').max(500);

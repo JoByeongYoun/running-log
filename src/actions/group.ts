@@ -4,9 +4,23 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { createServerSupabase } from '@/lib/supabase/server';
 import { messageForError } from '@/lib/errors';
-import { groupNameSchema, penaltySchema, distanceInputSchema, firstIssue, uuidSchema } from '@/lib/domain/validation';
+import { groupNameSchema, penaltyNoteSchema, wonSchema, distanceInputSchema, firstIssue, uuidSchema } from '@/lib/domain/validation';
 import { MAX_TARGET_METERS } from '@/lib/domain/constants';
 import type { ActionState } from './auth';
+
+const settingsFields = {
+  target: distanceInputSchema(MAX_TARGET_METERS),
+  freeMin: distanceInputSchema(MAX_TARGET_METERS),
+  perKmWon: wonSchema,
+  zeroWon: wonSchema,
+  penalty: penaltyNoteSchema.optional(),
+};
+const createSchema = z.object({ name: groupNameSchema, ...settingsFields });
+const scheduleSchema = z.object({ groupId: uuidSchema, ...settingsFields });
+
+function rpcSettings(d: z.infer<typeof createSchema> | z.infer<typeof scheduleSchema>) {
+  return { p_target_meters: d.target, p_free_min_meters: d.freeMin, p_penalty_per_km_won: d.perKmWon, p_zero_km_penalty_won: d.zeroWon, p_penalty: d.penalty ?? null };
+}
 
 export async function leaveGroup(): Promise<{ error?: string }> {
   const supabase = await createServerSupabase();
@@ -16,15 +30,11 @@ export async function leaveGroup(): Promise<{ error?: string }> {
   return {};
 }
 
-const createSchema = z.object({ name: groupNameSchema, target: distanceInputSchema(MAX_TARGET_METERS), penalty: penaltySchema });
-
 export async function createGroup(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const parsed = createSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: firstIssue(parsed.error) };
   const supabase = await createServerSupabase();
-  const { data, error } = await supabase.rpc('create_group', {
-    p_name: parsed.data.name, p_target_meters: parsed.data.target, p_penalty: parsed.data.penalty,
-  });
+  const { data, error } = await supabase.rpc('create_group', { p_name: parsed.data.name, ...rpcSettings(parsed.data) });
   if (error) return { error: messageForError(error) };
   const code = data?.[0]?.invite_code;
   revalidatePath('/'); revalidatePath('/group');
@@ -42,15 +52,12 @@ export async function renameGroup(_prev: ActionState, formData: FormData): Promi
 }
 
 export async function scheduleSettings(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const parsed = z.object({ groupId: uuidSchema, target: distanceInputSchema(MAX_TARGET_METERS), penalty: penaltySchema })
-    .safeParse(Object.fromEntries(formData));
+  const parsed = scheduleSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: firstIssue(parsed.error) };
   const supabase = await createServerSupabase();
-  const { data, error } = await supabase.rpc('schedule_group_settings', {
-    p_group_id: parsed.data.groupId, p_target_meters: parsed.data.target, p_penalty: parsed.data.penalty,
-  });
+  const { data, error } = await supabase.rpc('schedule_group_settings', { p_group_id: parsed.data.groupId, ...rpcSettings(parsed.data) });
   if (error) return { error: messageForError(error) };
-  revalidatePath('/admin');
+  revalidatePath('/admin'); revalidatePath('/group');
   return { success: `${data}부터 적용됩니다.` };
 }
 
