@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { formatMeters } from '@/lib/domain/distance';
 import { assignRanks } from '@/lib/domain/rank';
 import { buildTrack, type TrackLane, type TrackSegment } from '@/lib/dashboard/track';
+import { formatWon } from '@/lib/domain/penalty';
+import { RUNNER_TYPE_SHORT } from '@/lib/domain/runner-type';
 import { Avatar } from '@/components/ui/Avatar';
 import { MemberModal } from './MemberModal';
 import { RankBadge } from './RankBadge';
@@ -36,9 +38,9 @@ export function WeekTrack({ data, myId }: { data: WeekDashboard; myId: string })
 
   const backParam = `?week=${data.week.weekStart}&from=home`;
   const track = buildTrack(data.members, data.week.targetMeters);
-  // 판정용 순위(m.rank)는 준비 주간 멤버가 null이므로, 표시용 순위는 전체 멤버를 승인 거리로 매긴다.
+  // 판정용 순위(m.rank)는 준비 주간 멤버가 null이므로, 표시용 순위는 열정러너 전체를 승인 거리로 매긴다. 자유·부상은 순위 없음.
   const finalized = data.week.state === 'finalized';
-  const displayRank = new Map(assignRanks(data.members.map((m) => ({ userId: m.userId, totalMeters: m.approvedMeters }))).map((r) => [r.userId, r.rank]));
+  const displayRank = new Map(assignRanks(data.members.filter((m) => m.runnerType === 'passion').map((m) => ({ userId: m.userId, totalMeters: m.approvedMeters }))).map((r) => [r.userId, r.rank]));
 
   return (
     <section className="track-stadium overflow-hidden rounded-2xl p-3 text-white shadow-md ring-1 ring-green-700/40 sm:p-4" aria-labelledby="week-track-title">
@@ -60,7 +62,7 @@ export function WeekTrack({ data, myId }: { data: WeekDashboard; myId: string })
             <ol className="flex w-7 shrink-0 flex-col pt-5" aria-hidden>
               {data.members.map((m) => (
                 <li key={m.userId} className="flex items-start justify-center" style={{ height: LANE_H, paddingTop: TRAIL_Y - 10 }}>
-                  <RankBadge rank={displayRank.get(m.userId)} />
+                  {m.runnerType === 'passion' ? <RankBadge rank={displayRank.get(m.userId)} /> : <span className="text-[10px] font-bold text-white/70">{RUNNER_TYPE_SHORT[m.runnerType]}</span>}
                 </li>
               ))}
             </ol>
@@ -85,7 +87,6 @@ export function WeekTrack({ data, myId }: { data: WeekDashboard; myId: string })
                     member={m}
                     lane={track.lanes.get(m.userId)!}
                     goalPct={track.goalPct}
-                    targetMeters={data.week.targetMeters}
                     isMe={m.userId === myId}
                     ran={ran}
                     backParam={backParam}
@@ -108,17 +109,19 @@ type LaneProps = {
   member: MemberRow;
   lane: TrackLane;
   goalPct: number;
-  targetMeters: number;
   isMe: boolean;
   ran: boolean;
   backParam: string;
   onOpenProfile: () => void;
 };
 
-function Lane({ member: m, lane, goalPct, targetMeters, isMe, ran, backParam, onOpenProfile }: LaneProps) {
-  const reachedGoal = m.approvedMeters > 0 && lane.approvedPct >= goalPct;
-  const remaining = Math.max(0, targetMeters - m.approvedMeters);
-  const status = m.leftDuringWeek || !m.activeNow ? '탈퇴' : m.resting ? '휴식' : null;
+function Lane({ member: m, lane, goalPct, isMe, ran, backParam, onOpenProfile }: LaneProps) {
+  const goal = m.goalMeters; // 부상은 null
+  const reachedGoal = goal !== null && m.approvedMeters > 0 && m.approvedMeters >= goal;
+  const remaining = goal === null ? 0 : Math.max(0, goal - m.approvedMeters);
+  const over = goal === null ? 0 : Math.max(0, m.approvedMeters - goal);
+  const status = m.leftDuringWeek || !m.activeNow ? '탈퇴' : m.runnerType === 'injured' ? '부상' : null;
+  const showPenalty = goal !== null && !reachedGoal && m.eligible && m.penaltyWon > 0;
   const anchor = lane.approvedPct < TAG_EDGE_PCT ? 'start' : lane.approvedPct > 100 - TAG_EDGE_PCT ? 'end' : 'center';
   const tagShift = anchor === 'start' ? `-${AVATAR / 2}px` : anchor === 'end' ? `calc(-100% + ${AVATAR / 2}px)` : '-50%';
   const runnerLeft = ran ? `${lane.approvedPct}%` : '0%';
@@ -137,12 +140,12 @@ function Lane({ member: m, lane, goalPct, targetMeters, isMe, ran, backParam, on
         <button
           type="button"
           onClick={onOpenProfile}
-          aria-label={`${m.nickname} 이번 주 기록 보기 · 승인 ${formatMeters(m.approvedMeters)} km · ${reachedGoal ? '목표 달성' : `남은 ${formatMeters(remaining)} km`}${status ? ` · ${status}` : ''}`}
+          aria-label={`${m.nickname} 이번 주 기록 보기 · 승인 ${formatMeters(m.approvedMeters)} km · ${goal === null ? '평가 제외' : reachedGoal ? '목표 달성' : `남은 ${formatMeters(remaining)} km`}${showPenalty ? ` · 벌금 ${formatWon(m.penaltyWon)}` : ''}${status ? ` · ${status}` : ''}`}
           className={`absolute z-20 -translate-x-1/2 -translate-y-1/2 rounded-full transition-[left] duration-1000 ease-out hover:scale-110 active:scale-95 motion-reduce:transition-none ${isMe ? 'track-runner-me' : 'shadow-[0_2px_6px_rgba(0,0,0,0.4)] ring-2 ring-white'}`}
           style={{ left: runnerLeft, top: TRAIL_Y, width: AVATAR, height: AVATAR }}
         >
           <span className={`block rounded-full ${isMe && ran ? 'track-bob' : ''}`}>
-            <Avatar src={m.avatarUrl ?? null} name={m.nickname} size={AVATAR} resting={m.resting} />
+            <Avatar src={m.avatarUrl ?? null} name={m.nickname} size={AVATAR} badge={m.runnerType} />
           </span>
           <span className="sr-only">{OUTCOME_LABEL[m.outcome]}</span>
         </button>
@@ -165,8 +168,9 @@ function Lane({ member: m, lane, goalPct, targetMeters, isMe, ran, backParam, on
         >
           {formatMeters(m.approvedMeters)}
           <span className={`ml-1 font-semibold ${reachedGoal ? 'text-yellow-200' : 'text-white/80'}`}>
-            {reachedGoal ? (lane.overMeters > 0 ? `+${formatMeters(lane.overMeters)} 🎉` : 'GOAL! 🎉') : `${formatMeters(remaining)} 남음`}
+            {goal === null ? '평가 제외' : reachedGoal ? (over > 0 ? `+${formatMeters(over)} 🎉` : 'GOAL! 🎉') : `${formatMeters(remaining)} 남음`}
           </span>
+          {showPenalty && <span className="ml-1 rounded bg-red-600/80 px-1 text-[9px] font-semibold text-white">{formatWon(m.penaltyWon)}</span>}
         </div>
       </div>
     </li>
