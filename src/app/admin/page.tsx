@@ -6,7 +6,6 @@ import { signedUrls } from '@/lib/storage/signed-url';
 import { weekStartOf } from '@/lib/domain/week';
 import { AppHeader } from '@/components/layout/AppHeader';
 import { JoinRequests, type JoinRequestItem } from '@/components/admin/JoinRequests';
-import { RestRequests, type RestRequestItem } from '@/components/admin/RestRequests';
 import { MemberList, type MemberItem } from '@/components/admin/MemberList';
 import { GroupSettings } from '@/components/admin/GroupSettings';
 import { ReviewQueue } from '@/components/admin/ReviewQueue';
@@ -30,30 +29,25 @@ export default async function AdminPage({ searchParams }: PageProps<'/admin'>) {
   const groupId = state.membership.groupId;
   const supabase = session.supabase;
 
-  const [{ data: requests }, { data: restRequests }, { data: members }, { count: pendingRecords }] = await Promise.all([
+  const [{ data: requests }, { data: members }, { count: pendingRecords }] = await Promise.all([
     supabase.from('join_requests').select('id, user_id, created_at, profiles!join_requests_user_id_fkey(nickname, avatar_path)').eq('group_id', groupId).eq('status', 'pending').order('created_at'),
-    supabase.from('rest_requests').select('id, user_id, reason, created_at, profiles!rest_requests_user_id_fkey(nickname, avatar_path)').eq('group_id', groupId).eq('status', 'pending').order('created_at'),
-    supabase.from('memberships').select('user_id, role, joined_at, rest_started_at, profiles(nickname, avatar_path)').eq('group_id', groupId).is('left_at', null).order('joined_at'),
+    supabase.from('memberships').select('user_id, role, joined_at, runner_type, profiles(nickname, avatar_path)').eq('group_id', groupId).is('left_at', null).order('joined_at'),
     supabase.from('running_records').select('id', { count: 'exact', head: true }).eq('group_id', groupId).eq('status', 'pending'),
   ]);
-  const avatarPaths = [...(requests ?? []).map((r) => r.profiles?.avatar_path), ...(restRequests ?? []).map((r) => r.profiles?.avatar_path), ...(members ?? []).map((m) => m.profiles?.avatar_path)].filter((p): p is string => Boolean(p));
+  const avatarPaths = [...(requests ?? []).map((r) => r.profiles?.avatar_path), ...(members ?? []).map((m) => m.profiles?.avatar_path)].filter((p): p is string => Boolean(p));
   const urls = await signedUrls('avatars', avatarPaths);
 
   const requestItems: JoinRequestItem[] = (requests ?? []).map((r) => ({
     id: r.id, userId: r.user_id, nickname: r.profiles?.nickname ?? '(이름 없음)',
     avatarUrl: r.profiles?.avatar_path ? urls.get(r.profiles.avatar_path) ?? null : null, createdAt: r.created_at,
   }));
-  const restItems: RestRequestItem[] = (restRequests ?? []).map((r) => ({
-    id: r.id, userId: r.user_id, reason: r.reason, nickname: r.profiles?.nickname ?? '(이름 없음)',
-    avatarUrl: r.profiles?.avatar_path ? urls.get(r.profiles.avatar_path) ?? null : null, createdAt: r.created_at,
-  }));
   const memberItems: MemberItem[] = (members ?? []).map((m) => ({
     userId: m.user_id, role: m.role, joinedAt: m.joined_at, nickname: m.profiles?.nickname ?? '(이름 없음)',
     avatarUrl: m.profiles?.avatar_path ? urls.get(m.profiles.avatar_path) ?? null : null,
-    resting: m.rest_started_at != null, restStartedAt: m.rest_started_at,
+    runnerType: m.runner_type,
   }));
 
-  const counts: Partial<Record<TabKey, number>> = { requests: requestItems.length + restItems.length, reviews: pendingRecords ?? 0 };
+  const counts: Partial<Record<TabKey, number>> = { requests: requestItems.length, reviews: pendingRecords ?? 0 };
 
   return (
     <>
@@ -71,7 +65,7 @@ export default async function AdminPage({ searchParams }: PageProps<'/admin'>) {
         </ul>
       </nav>
       <main className="mx-auto w-full max-w-md px-4 py-4">
-        {tab === 'requests' && (<><JoinRequests items={requestItems} /><RestRequests items={restItems} /></>)}
+        {tab === 'requests' && <JoinRequests items={requestItems} />}
         {tab === 'reviews' && <ReviewQueue groupId={groupId} />}
         {tab === 'members' && (
           <MemberList groupId={groupId} members={memberItems} myId={session.user.id} initialInvite={invite} siteUrl={(process.env.NEXT_PUBLIC_SITE_URL ?? '').replace(/\/+$/, '')} />
@@ -85,15 +79,10 @@ export default async function AdminPage({ searchParams }: PageProps<'/admin'>) {
 async function SettingsTab({ groupId, name, notice }: { groupId: string; name: string; notice: string | null }) {
   const session = await getSessionUser();
   const thisWeek = weekStartOf(new Date());
-  const { data: settings } = await session!.supabase.from('group_settings').select('effective_week_start, target_meters, penalty').eq('group_id', groupId).order('effective_week_start', { ascending: false });
+  const { data: settings } = await session!.supabase.from('group_settings').select('effective_week_start, target_meters, penalty, free_min_meters, penalty_per_km_won, zero_km_penalty_won').eq('group_id', groupId).order('effective_week_start', { ascending: false });
   const current = (settings ?? []).find((s) => s.effective_week_start <= thisWeek) ?? settings?.[settings.length - 1];
   const scheduled = (settings ?? []).find((s) => s.effective_week_start > thisWeek) ?? null;
   if (!current) return null;
-  return (
-    <GroupSettings
-      groupId={groupId} name={name} notice={notice}
-      current={{ targetMeters: current.target_meters, penalty: current.penalty, weekStart: current.effective_week_start }}
-      scheduled={scheduled ? { targetMeters: scheduled.target_meters, penalty: scheduled.penalty, weekStart: scheduled.effective_week_start } : null}
-    />
-  );
+  const toRules = (s: NonNullable<typeof settings>[number]) => ({ targetMeters: s.target_meters, penalty: s.penalty, freeMinMeters: s.free_min_meters, penaltyPerKmWon: s.penalty_per_km_won, zeroKmPenaltyWon: s.zero_km_penalty_won, weekStart: s.effective_week_start });
+  return <GroupSettings groupId={groupId} name={name} notice={notice} current={toRules(current)} scheduled={scheduled ? toRules(scheduled) : null} />;
 }
