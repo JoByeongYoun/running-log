@@ -7,11 +7,12 @@ import { Avatar } from '@/components/ui/Avatar';
 afterEach(cleanup);
 
 describe('RunnerBadge', () => {
-  it('passion badge has the label for assistive tech but no text, only the flame', () => {
+  it('passion badge has the label for assistive tech, a burst, and neither text nor flame', () => {
     const { getByRole, queryByText, container } = render(<RunnerBadge type="passion" />);
     expect(getByRole('img', { name: '열정러너' })).toBeTruthy();
     expect(queryByText('열정')).toBeNull();
-    expect(container.querySelector('[data-part="flame"]')).toBeTruthy();
+    expect(container.querySelector('[data-part="burst"]')).toBeTruthy();
+    expect(container.querySelector('[data-part="flame"]')).toBeNull();
   });
   it('free badge is a plain cloud with no text', () => {
     const { getByRole, queryByText, container } = render(<RunnerBadge type="free" />);
@@ -34,10 +35,10 @@ describe('Avatar badge', () => {
     const b = render(<Avatar src={null} name="보안관" badge="injured" />);
     expect(b.getByLabelText('보안관 프로필 · 부상러너').className).toContain('grayscale');
   });
-  it('passion → sticker badge with the flame, no ring around the avatar', () => {
+  it('passion → sticker burst badge, no ring around the avatar', () => {
     const { getByRole, container } = render(<Avatar src={null} name="짹리" badge="passion" />);
     expect(getByRole('img', { name: '열정러너' })).toBeTruthy();
-    expect(container.querySelector('[data-part="flame"]')).toBeTruthy();
+    expect(container.querySelector('[data-part="burst"]')).toBeTruthy();
     expect(container.querySelector('[data-part="sun-ring"]')).toBeNull();
   });
   it('no badge → plain avatar', () => {

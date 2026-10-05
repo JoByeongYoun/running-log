@@ -3,7 +3,7 @@ import { RUNNER_TYPE_LABEL, type RunnerType } from '@/lib/domain/runner-type';
 
 /**
  * 아바타 오른쪽 아래에 붙는 스티커 뱃지.
- *  - 열정: 주황 글로우 + 빨강→주황→노랑 14각 폭발 + 노란 안쪽 폭발 + 세 겹 불꽃(빨강·주황·흰 심지) + 반짝임. 글자 없음.
+ *  - 열정: 주황 글로우 + 빨강→주황→노랑 14각 폭발 + 노란 안쪽 폭발 + 반짝임. 글자·불꽃 없음.
  *  - 자유: 하늘색 구름. 글자 없음.
  *  - 부상: 초록 원 + 흰 테두리, 흰 십자.
  */
@@ -26,30 +26,11 @@ export function RunnerBadge({ type, size = 28, className = '' }: { type: RunnerT
             <radialGradient id={`${uid}-b`} cx="50%" cy="60%" r="60%">
               <stop offset="0%" stopColor="#FDE047" /><stop offset="45%" stopColor="#F97316" /><stop offset="100%" stopColor="#B91C1C" />
             </radialGradient>
-            <linearGradient id={`${uid}-f1`} x1="0" y1="1" x2="0" y2="0">
-              <stop offset="0%" stopColor="#DC2626" /><stop offset="55%" stopColor="#F97316" /><stop offset="100%" stopColor="#FACC15" />
-            </linearGradient>
-            <linearGradient id={`${uid}-f2`} x1="0" y1="1" x2="0" y2="0">
-              <stop offset="0%" stopColor="#FB923C" /><stop offset="100%" stopColor="#FEF08A" />
-            </linearGradient>
-            <linearGradient id={`${uid}-f3`} x1="0" y1="1" x2="0" y2="0">
-              <stop offset="0%" stopColor="#FEF3C7" /><stop offset="100%" stopColor="#FFFFFF" />
-            </linearGradient>
             <filter id={`${uid}-g`} x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="1.6" /></filter>
           </defs>
           <circle cx="20" cy="20" r="18" fill="#F97316" opacity="0.55" filter={`url(#${uid}-g)`} />
-          <polygon points={BURST_OUTER} fill={`url(#${uid}-b)`} stroke="#7F1D1D" strokeWidth="1.5" strokeLinejoin="round" />
+          <polygon data-part="burst" points={BURST_OUTER} fill={`url(#${uid}-b)`} stroke="#7F1D1D" strokeWidth="1.5" strokeLinejoin="round" />
           <polygon points={BURST_INNER} fill="#FDE047" opacity="0.85" />
-          {/* 큰 불꽃 몸통 */}
-          <path
-            data-part="flame"
-            d="M20 6.5c.6 3.4 3.6 4.6 5.6 7.4 2.3 3.1 2.2 7.1-.3 9.9-.1-2.3-1-4-2.6-5.2.6 3.2-.9 5-2.1 7-.6 1-.8 2.1-.5 3.3-3.6-.6-6.3-3.3-6.8-6.9-.5-3.8 1.5-6.4 3.6-8.6 1.6-1.8 2.9-3.9 3.1-6.9z"
-            fill={`url(#${uid}-f1)`} stroke="#7F1D1D" strokeWidth="0.9" strokeLinejoin="round"
-          />
-          {/* 안쪽 불꽃 */}
-          <path d="M20.4 15.2c.3 2 2 2.9 2.9 4.6 1 1.9.7 4.1-.7 5.6-.1-1.4-.6-2.4-1.5-3.1.2 1.9-.7 3-1.4 4.1-.3.5-.4 1.1-.3 1.6-2-.5-3.4-2.2-3.5-4.3-.1-2.2 1.2-3.6 2.4-4.9.9-1 1.7-2.2 2.1-3.6z" fill={`url(#${uid}-f2)`} />
-          {/* 흰 심지 */}
-          <path d="M20.6 21.2c.2 1 .9 1.5 1.3 2.4.4 1 .2 2.1-.5 2.8 0-.7-.3-1.2-.7-1.6.1 1-.4 1.5-.8 2.1-.1.2-.2.5-.2.8-1-.3-1.7-1.2-1.7-2.2 0-1.1.7-1.8 1.3-2.5.5-.5.9-1.1 1.3-1.8z" fill={`url(#${uid}-f3)`} />
           {/* 반짝임 */}
           <path d="M31.5 7.5l.8 1.9 1.9.8-1.9.8-.8 1.9-.8-1.9-1.9-.8 1.9-.8z" fill="#FFFFFF" />
           <path d="M8 9.5l.5 1.2 1.2.5-1.2.5-.5 1.2-.5-1.2-1.2-.5 1.2-.5z" fill="#FFFFFF" opacity="0.9" />

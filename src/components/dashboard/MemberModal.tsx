@@ -3,7 +3,6 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { PhotoLightbox } from '@/components/record/PhotoLightbox';
 import { formatMeters } from '@/lib/domain/distance';
-import { formatWon } from '@/lib/domain/penalty';
 import { RUNNER_TYPE_LABEL } from '@/lib/domain/runner-type';
 import { RankBadge } from './RankBadge';
 import { Avatar } from '@/components/ui/Avatar';
@@ -43,7 +42,6 @@ export function MemberModal({ member, data, isMe, onClose }: Props) {
   const injured = m?.runnerType === 'injured';
   const outcomeLabel = m ? (injured ? '부상 · 평가 제외' : m.joinedThisWeek ? '준비 주간' : finalized ? OUTCOME_LABEL[m.outcome] : '') : '';
   const outcomeKey: Outcome = m ? (injured || m.joinedThisWeek ? 'not_evaluated' : m.outcome) : 'not_evaluated';
-  const showPenalty = Boolean(m && !injured && m.eligible && m.penaltyWon > 0);
 
   return (
     <Modal open={Boolean(m)} onClose={onClose} title={m ? `${m.nickname} 이번 주 기록` : ''} bare>
@@ -98,7 +96,6 @@ export function MemberModal({ member, data, isMe, onClose }: Props) {
                   <span className="font-semibold text-slate-900">
                     {injured ? '' : remaining > 0 ? `남은 ${formatMeters(remaining)} km` : over > 0 ? `+${formatMeters(over)} km 초과 달성` : '목표 달성'}
                   </span>
-                  {showPenalty && <><br /><span className="font-semibold text-red-600">{finalized ? '벌금' : '예상 벌금'} {formatWon(m.penaltyWon)}</span></>}
                 </p>
               </div>
               <div className="mt-2 flex h-2.5 w-full overflow-hidden rounded-full bg-slate-900/10" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={`${m.nickname} 진행률`}>
