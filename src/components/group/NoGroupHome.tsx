@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/States';
-import { formatMeters } from '@/lib/domain/distance';
+import { RulesLine } from '@/components/group/RulesLine';
 import { cancelJoinRequest } from '@/actions/join';
 import { useToast } from '@/components/ui/Toast';
 import type { GroupState } from '@/lib/group-state';
@@ -21,10 +21,7 @@ export function NoGroupHome({ state }: { state: GroupState }) {
     return (
       <Card className="space-y-3">
         <h2 className="text-lg font-semibold">{r.groupName}</h2>
-        <dl className="text-sm text-slate-700">
-          <div className="flex justify-between"><dt>주간 목표</dt><dd>{formatMeters(r.targetMeters)} km</dd></div>
-          <div className="flex justify-between"><dt>실패 시 벌칙</dt><dd className="text-right">{r.penalty}</dd></div>
-        </dl>
+        <RulesLine rules={r} />
         <p className="rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-800">관리자 승인을 기다리고 있습니다.</p>
         <Button variant="secondary" full loading={pending} onClick={() => start(async () => {
           const res = await cancelJoinRequest(r.id);

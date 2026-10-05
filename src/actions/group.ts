@@ -19,7 +19,8 @@ const createSchema = z.object({ name: groupNameSchema, ...settingsFields });
 const scheduleSchema = z.object({ groupId: uuidSchema, ...settingsFields });
 
 function rpcSettings(d: z.infer<typeof createSchema> | z.infer<typeof scheduleSchema>) {
-  return { p_target_meters: d.target, p_free_min_meters: d.freeMin, p_penalty_per_km_won: d.perKmWon, p_zero_km_penalty_won: d.zeroWon, p_penalty: d.penalty ?? null };
+  // DB 함수는 빈 문자열을 null 로 정규화한다 (생성된 타입이 null 을 받지 않아 '' 로 보낸다)
+  return { p_target_meters: d.target, p_free_min_meters: d.freeMin, p_penalty_per_km_won: d.perKmWon, p_zero_km_penalty_won: d.zeroWon, p_penalty: d.penalty ?? '' };
 }
 
 export async function leaveGroup(): Promise<{ error?: string }> {
