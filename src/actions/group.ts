@@ -4,14 +4,14 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { createServerSupabase } from '@/lib/supabase/server';
 import { messageForError } from '@/lib/errors';
-import { groupNameSchema, penaltyNoteSchema, wonSchema, distanceInputSchema, firstIssue, uuidSchema } from '@/lib/domain/validation';
-import { MAX_TARGET_METERS } from '@/lib/domain/constants';
+import { groupNameSchema, penaltyNoteSchema, wonSchema, wonInputSchema, distanceInputSchema, firstIssue, uuidSchema } from '@/lib/domain/validation';
+import { MAX_PER_KM_WON, MAX_TARGET_METERS } from '@/lib/domain/constants';
 import type { ActionState } from './auth';
 
 const settingsFields = {
   target: distanceInputSchema(MAX_TARGET_METERS),
   freeMin: distanceInputSchema(MAX_TARGET_METERS),
-  perKmWon: wonSchema,
+  perKmWon: wonInputSchema(MAX_PER_KM_WON),
   zeroWon: wonSchema,
   penalty: penaltyNoteSchema.optional(),
 };

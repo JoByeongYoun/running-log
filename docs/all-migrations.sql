@@ -2316,7 +2316,7 @@ alter table public.week_members add column runner_type public.runner_type not nu
 
 alter table public.group_settings
   add column free_min_meters     integer not null default 5000   check (free_min_meters between 1 and 1000000),
-  add column penalty_per_km_won  integer not null default 10000  check (penalty_per_km_won between 0 and 10000000),
+  add column penalty_per_km_won  integer not null default 10000  check (penalty_per_km_won between 0 and 1000000),
   add column zero_km_penalty_won integer not null default 100000 check (zero_km_penalty_won between 0 and 10000000);
 alter table public.group_settings alter column penalty drop not null;
 alter table public.group_settings drop constraint if exists group_settings_penalty_check;
@@ -2482,7 +2482,7 @@ begin
   if v_penalty is not null and char_length(v_penalty) > 500 then perform app.fail('invalid_input'); end if;
   if p_target_meters is null or p_target_meters not between 1 and 1000000 then perform app.fail('invalid_input'); end if;
   if p_free_min_meters is null or p_free_min_meters not between 1 and 1000000 then perform app.fail('invalid_input'); end if;
-  if p_penalty_per_km_won is null or p_penalty_per_km_won not between 0 and 10000000 then perform app.fail('invalid_input'); end if;
+  if p_penalty_per_km_won is null or p_penalty_per_km_won not between 0 and 1000000 then perform app.fail('invalid_input'); end if;
   if p_zero_km_penalty_won is null or p_zero_km_penalty_won not between 0 and 10000000 then perform app.fail('invalid_input'); end if;
 
   perform pg_advisory_xact_lock(hashtext('user:' || uid::text));
@@ -2515,7 +2515,7 @@ begin
   if not app.is_group_admin(p_group_id) then perform app.fail('forbidden'); end if;
   if p_target_meters is null or p_target_meters not between 1 and 1000000 then perform app.fail('invalid_input'); end if;
   if p_free_min_meters is null or p_free_min_meters not between 1 and 1000000 then perform app.fail('invalid_input'); end if;
-  if p_penalty_per_km_won is null or p_penalty_per_km_won not between 0 and 10000000 then perform app.fail('invalid_input'); end if;
+  if p_penalty_per_km_won is null or p_penalty_per_km_won not between 0 and 1000000 then perform app.fail('invalid_input'); end if;
   if p_zero_km_penalty_won is null or p_zero_km_penalty_won not between 0 and 10000000 then perform app.fail('invalid_input'); end if;
   if v_penalty is not null and char_length(v_penalty) > 500 then perform app.fail('invalid_input'); end if;
   insert into public.group_settings (group_id, effective_week_start, target_meters, penalty, free_min_meters, penalty_per_km_won, zero_km_penalty_won)
@@ -2757,7 +2757,7 @@ begin
     'successCount', v_success,
     'evaluatedCount', v_eval,
     'groupTotalMeters', coalesce((d -> 'week' ->> 'groupTotalMeters')::int, v_total::int),
-    'penaltyTotalWon', v_penalty::int,
+    'penaltyTotalWon', v_penalty,
     'myUserId', auth.uid()
   );
 end $$;

@@ -119,7 +119,7 @@ create function public.set_member_runner_type(p_group_id uuid, p_user_id uuid, p
 
 - `create_group(p_name, p_target_meters, p_penalty, p_free_min_meters, p_penalty_per_km_won, p_zero_km_penalty_won)`: `p_penalty`는 null/빈 문자열 허용.
 - `schedule_group_settings`도 같은 인자 추가. 기존 규칙(다음 주부터 유효 또는 현재 `effective_week_start` 정책)은 그대로 따른다.
-- 서버 액션 zod: 거리 입력은 기존 `distanceInputSchema`, 금액은 `0 이상 10,000,000 이하 정수`, 메모는 `penaltySchema.optional()`.
+- 서버 액션 zod: 거리 입력은 기존 `distanceInputSchema`, 금액은 `0 이상 10,000,000 이하 정수`(km당 벌금은 `1,000,000` 이하: 목표 최대 1,000km × km당 벌금이 int4 를 넘지 않도록), 메모는 `penaltySchema.optional()`.
 
 ### 3.5 조회 JSON 변경
 

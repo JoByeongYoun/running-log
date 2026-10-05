@@ -17,6 +17,8 @@ export const COMMENT_MAX = 1000;
 export const SIGNED_URL_TTL_SECONDS = 60 * 60;
 export const TZ = 'Asia/Seoul';
 export const MAX_WON = 10_000_000;
+// km당 벌금 상한. 목표 최대 1,000km × 이 값이 int4 를 넘지 않도록 잡는다 (1e9 < 2^31).
+export const MAX_PER_KM_WON = 1_000_000;
 export const DEFAULT_FREE_MIN_METERS = 5_000;
 export const DEFAULT_PENALTY_PER_KM_WON = 10_000;
 export const DEFAULT_ZERO_KM_PENALTY_WON = 100_000;

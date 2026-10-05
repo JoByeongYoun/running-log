@@ -209,3 +209,19 @@ describe('runner types: settings, snapshot, evaluation, finalize', () => {
     expect(n.link).toBeNull();
   });
 });
+
+describe('penalty bounds: largest allowed settings never overflow', () => {
+  const admin = adminClient();
+  beforeAll(async () => { await resetAll(); });
+
+  it('rejects per-km over 1,000,000원 and evaluates the max case without error', async () => {
+    await setFakeNow('2026-09-02T03:00:00Z');
+    const owner = await newMember('own-max');
+    expectRpcError(await owner.client.rpc('create_group', { p_name: '한도초과', p_target_meters: 1000000, p_penalty_per_km_won: 1000001 }), 'invalid_input');
+    const g = await owner.client.rpc('create_group', { p_name: '한도최대', p_target_meters: 1000000, p_free_min_meters: 1000000, p_penalty_per_km_won: 1000000, p_zero_km_penalty_won: 10000000 });
+    expect(g.error).toBeNull();
+    const { data, error } = await admin.rpc('test_evaluate', { p_type: 'passion', p_total: 1, p_target: 1000000, p_free_min: 1000000, p_per_km: 1000000, p_zero_won: 10000000 });
+    expect(error).toBeNull();
+    expect((data as Array<{ penalty_won: number }>)[0].penalty_won).toBe(1000000000);
+  });
+});

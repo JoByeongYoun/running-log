@@ -17,13 +17,16 @@ export const groupNameSchema = z.string().trim()
 export const penaltyNoteSchema = z.string().trim().max(PENALTY_MAX, `벌칙 메모는 ${PENALTY_MAX}자 이하입니다.`).transform((v) => (v === '' ? null : v));
 
 /** 원 단위 금액. "10,000" 같은 천 단위 구분 허용. */
-export const wonSchema = z.string().trim().transform((v, ctx) => {
-  const digits = v.replace(/,/g, '');
-  if (!/^\d+$/.test(digits)) { ctx.addIssue({ code: 'custom', message: '금액은 0 이상의 정수(원)로 입력하세요.' }); return z.NEVER; }
-  const n = Number(digits);
-  if (n > MAX_WON) { ctx.addIssue({ code: 'custom', message: `금액은 ${MAX_WON.toLocaleString('ko-KR')}원 이하여야 합니다.` }); return z.NEVER; }
-  return n;
-});
+export function wonInputSchema(max = MAX_WON) {
+  return z.string().trim().transform((v, ctx) => {
+    const digits = v.replace(/,/g, '');
+    if (!/^\d+$/.test(digits)) { ctx.addIssue({ code: 'custom', message: '금액은 0 이상의 정수(원)로 입력하세요.' }); return z.NEVER; }
+    const n = Number(digits);
+    if (n > max) { ctx.addIssue({ code: 'custom', message: `금액은 ${max.toLocaleString('ko-KR')}원 이하여야 합니다.` }); return z.NEVER; }
+    return n;
+  });
+}
+export const wonSchema = wonInputSchema();
 export const memoSchema = z.string().trim().max(MEMO_MAX, `메모는 ${MEMO_MAX}자 이하입니다.`);
 export const commentSchema = z.string().trim().min(1, '댓글을 입력하세요.').max(COMMENT_MAX, `댓글은 ${COMMENT_MAX}자 이하입니다.`);
 export const reasonSchema = z.string().trim().min(1, '사유를 입력하세요.').max(500);

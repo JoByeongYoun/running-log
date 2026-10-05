@@ -49,7 +49,7 @@ export function GroupSettings({ groupId, name, current, scheduled, notice }: Pro
           <input type="hidden" name="groupId" value={groupId} />
           <Input label="열정러너 주간 목표 (km)" name="target" inputMode="decimal" required defaultValue={formatMeters(base.targetMeters)} hint="0.01 ~ 1,000km" />
           <Input label="자유러너 주간 최소 거리 (km)" name="freeMin" inputMode="decimal" required defaultValue={formatMeters(base.freeMinMeters)} hint="0.01 ~ 1,000km" />
-          <Input label="미달 1km당 벌금 (원)" name="perKmWon" inputMode="numeric" required defaultValue={base.penaltyPerKmWon.toLocaleString('ko-KR')} hint="미달 거리는 1km 단위로 올림" />
+          <Input label="미달 1km당 벌금 (원)" name="perKmWon" inputMode="numeric" required defaultValue={base.penaltyPerKmWon.toLocaleString('ko-KR')} hint="미달 거리는 1km 단위로 올림. 최대 1,000,000원" />
           <Input label="0km 벌금 (원)" name="zeroWon" inputMode="numeric" required defaultValue={base.zeroKmPenaltyWon.toLocaleString('ko-KR')} hint="한 번도 안 달리면 km당 벌금 대신 이 금액" />
           <Textarea label="벌칙 메모 (선택)" name="penalty" maxLength={500} rows={2} defaultValue={base.penalty ?? ''} placeholder="예: 정산은 일요일 밤, 계좌는 공지 참고" />
           <p className="text-xs text-slate-500">변경은 다음 주 월요일부터 적용됩니다. 같은 주에 다시 저장하면 예약을 대체합니다.</p>

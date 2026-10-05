@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { nicknameSchema, penaltyNoteSchema, wonSchema, distanceInputSchema } from '@/lib/domain/validation';
+import { nicknameSchema, penaltyNoteSchema, wonSchema, wonInputSchema, distanceInputSchema } from '@/lib/domain/validation';
 import { MAX_TARGET_METERS } from '@/lib/domain/constants';
 
 describe('validation schemas', () => {
@@ -21,6 +21,8 @@ describe('validation schemas', () => {
     expect(wonSchema.safeParse('10000001').success).toBe(false);
     expect(wonSchema.safeParse('abc').success).toBe(false);
     expect(wonSchema.safeParse('1.5').success).toBe(false);
+    expect(wonInputSchema(1_000_000).safeParse('1,000,001').success).toBe(false);
+    expect(wonInputSchema(1_000_000).parse('1,000,000')).toBe(1_000_000);
   });
   it('distance schema converts to meters with custom max', () => {
     expect(distanceInputSchema().parse('5.25')).toBe(5250);
