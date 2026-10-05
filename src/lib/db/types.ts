@@ -119,26 +119,35 @@ export type Database = {
         Row: {
           created_at: string
           effective_week_start: string
+          free_min_meters: number
           group_id: string
           id: string
-          penalty: string
+          penalty: string | null
+          penalty_per_km_won: number
           target_meters: number
+          zero_km_penalty_won: number
         }
         Insert: {
           created_at?: string
           effective_week_start: string
+          free_min_meters?: number
           group_id: string
           id?: string
-          penalty: string
+          penalty?: string | null
+          penalty_per_km_won?: number
           target_meters: number
+          zero_km_penalty_won?: number
         }
         Update: {
           created_at?: string
           effective_week_start?: string
+          free_min_meters?: number
           group_id?: string
           id?: string
-          penalty?: string
+          penalty?: string | null
+          penalty_per_km_won?: number
           target_meters?: number
+          zero_km_penalty_won?: number
         }
         Relationships: [
           {
@@ -154,38 +163,47 @@ export type Database = {
         Row: {
           created_at: string
           finalized_at: string | null
+          free_min_meters: number
           group_id: string
           group_name_snapshot: string | null
           group_total_meters: number | null
           id: string
-          penalty: string
+          penalty: string | null
+          penalty_per_km_won: number
           state: Database["public"]["Enums"]["week_state"]
           target_meters: number
           week_start: string
+          zero_km_penalty_won: number
         }
         Insert: {
           created_at?: string
           finalized_at?: string | null
+          free_min_meters?: number
           group_id: string
           group_name_snapshot?: string | null
           group_total_meters?: number | null
           id?: string
-          penalty: string
+          penalty?: string | null
+          penalty_per_km_won?: number
           state?: Database["public"]["Enums"]["week_state"]
           target_meters: number
           week_start: string
+          zero_km_penalty_won?: number
         }
         Update: {
           created_at?: string
           finalized_at?: string | null
+          free_min_meters?: number
           group_id?: string
           group_name_snapshot?: string | null
           group_total_meters?: number | null
           id?: string
-          penalty?: string
+          penalty?: string | null
+          penalty_per_km_won?: number
           state?: Database["public"]["Enums"]["week_state"]
           target_meters?: number
           week_start?: string
+          zero_km_penalty_won?: number
         }
         Relationships: [
           {
@@ -285,8 +303,8 @@ export type Database = {
           id: string
           joined_at: string
           left_at: string | null
-          rest_started_at: string | null
           role: Database["public"]["Enums"]["membership_role"]
+          runner_type: Database["public"]["Enums"]["runner_type"]
           user_id: string
         }
         Insert: {
@@ -294,8 +312,8 @@ export type Database = {
           id?: string
           joined_at?: string
           left_at?: string | null
-          rest_started_at?: string | null
           role?: Database["public"]["Enums"]["membership_role"]
+          runner_type?: Database["public"]["Enums"]["runner_type"]
           user_id: string
         }
         Update: {
@@ -303,8 +321,8 @@ export type Database = {
           id?: string
           joined_at?: string
           left_at?: string | null
-          rest_started_at?: string | null
           role?: Database["public"]["Enums"]["membership_role"]
+          runner_type?: Database["public"]["Enums"]["runner_type"]
           user_id?: string
         }
         Relationships: [
@@ -565,61 +583,6 @@ export type Database = {
           },
         ]
       }
-      rest_requests: {
-        Row: {
-          created_at: string
-          group_id: string
-          id: string
-          reason: string | null
-          reviewed_at: string | null
-          reviewed_by: string | null
-          status: Database["public"]["Enums"]["join_status"]
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          group_id: string
-          id?: string
-          reason?: string | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          status?: Database["public"]["Enums"]["join_status"]
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          group_id?: string
-          id?: string
-          reason?: string | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          status?: Database["public"]["Enums"]["join_status"]
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "rest_requests_group_id_fkey"
-            columns: ["group_id"]
-            isOneToOne: false
-            referencedRelation: "groups"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "rest_requests_reviewed_by_fkey"
-            columns: ["reviewed_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "rest_requests_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       running_records: {
         Row: {
           activity_date: string
@@ -695,7 +658,7 @@ export type Database = {
           eligible: boolean
           joined_this_week: boolean
           left_during_week: boolean
-          resting: boolean
+          runner_type: Database["public"]["Enums"]["runner_type"]
           user_id: string
           week_id: string
         }
@@ -703,7 +666,7 @@ export type Database = {
           eligible?: boolean
           joined_this_week?: boolean
           left_during_week?: boolean
-          resting?: boolean
+          runner_type?: Database["public"]["Enums"]["runner_type"]
           user_id: string
           week_id: string
         }
@@ -711,7 +674,7 @@ export type Database = {
           eligible?: boolean
           joined_this_week?: boolean
           left_during_week?: boolean
-          resting?: boolean
+          runner_type?: Database["public"]["Enums"]["runner_type"]
           user_id?: string
           week_id?: string
         }
@@ -737,6 +700,7 @@ export type Database = {
           eligible: boolean
           nickname_snapshot: string
           outcome: Database["public"]["Enums"]["result_outcome"]
+          penalty_won: number
           rank: number | null
           total_meters: number
           user_id: string
@@ -746,6 +710,7 @@ export type Database = {
           eligible: boolean
           nickname_snapshot: string
           outcome: Database["public"]["Enums"]["result_outcome"]
+          penalty_won?: number
           rank?: number | null
           total_meters?: number
           user_id: string
@@ -755,6 +720,7 @@ export type Database = {
           eligible?: boolean
           nickname_snapshot?: string
           outcome?: Database["public"]["Enums"]["result_outcome"]
+          penalty_won?: number
           rank?: number | null
           total_meters?: number
           user_id?: string
@@ -827,14 +793,17 @@ export type Database = {
         Args: { p_request_id: string }
         Returns: undefined
       }
-      cancel_rest_request: {
-        Args: { p_request_id: string }
-        Returns: undefined
-      }
       claim_summary_auto_show: { Args: never; Returns: Json }
       cleanup_expired_uploads: { Args: never; Returns: string[] }
       create_group: {
-        Args: { p_name: string; p_penalty: string; p_target_meters: number }
+        Args: {
+          p_free_min_meters?: number
+          p_name: string
+          p_penalty?: string
+          p_penalty_per_km_won?: number
+          p_target_meters: number
+          p_zero_km_penalty_won?: number
+        }
         Returns: {
           group_id: string
           invite_code: string
@@ -849,7 +818,6 @@ export type Database = {
       }
       delete_comment: { Args: { p_comment_id: string }; Returns: undefined }
       delete_record: { Args: { p_record_id: string }; Returns: string[] }
-      end_my_rest: { Args: never; Returns: undefined }
       get_available_weeks: { Args: { p_group_id: string }; Returns: string[] }
       get_my_group_state: { Args: never; Returns: Json }
       get_notifications: { Args: { p_limit?: number }; Returns: Json }
@@ -868,10 +836,13 @@ export type Database = {
         Args: { p_code: string }
         Returns: {
           archived: boolean
+          free_min_meters: number
           group_id: string
           name: string
           penalty: string
+          penalty_per_km_won: number
           target_meters: number
+          zero_km_penalty_won: number
         }[]
       }
       mark_notifications_read: { Args: { p_ids: string[] }; Returns: undefined }
@@ -886,7 +857,6 @@ export type Database = {
         Returns: undefined
       }
       request_join: { Args: { p_code: string }; Returns: string }
-      request_rest: { Args: { p_reason?: string }; Returns: string }
       review_join_request: {
         Args: { p_approve: boolean; p_request_id: string }
         Returns: undefined
@@ -900,10 +870,6 @@ export type Database = {
         }
         Returns: undefined
       }
-      review_rest_request: {
-        Args: { p_approve: boolean; p_request_id: string }
-        Returns: undefined
-      }
       run_week_maintenance: { Args: never; Returns: Json }
       save_push_subscription: {
         Args: {
@@ -915,7 +881,14 @@ export type Database = {
         Returns: undefined
       }
       schedule_group_settings: {
-        Args: { p_group_id: string; p_penalty: string; p_target_meters: number }
+        Args: {
+          p_free_min_meters?: number
+          p_group_id: string
+          p_penalty?: string
+          p_penalty_per_km_won?: number
+          p_target_meters: number
+          p_zero_km_penalty_won?: number
+        }
         Returns: string
       }
       set_fake_now: { Args: { p: string }; Returns: undefined }
@@ -923,8 +896,12 @@ export type Database = {
         Args: { p_group_id: string; p_notice: string }
         Returns: undefined
       }
-      set_member_rest: {
-        Args: { p_group_id: string; p_resting: boolean; p_user_id: string }
+      set_member_runner_type: {
+        Args: {
+          p_group_id: string
+          p_type: Database["public"]["Enums"]["runner_type"]
+          p_user_id: string
+        }
         Returns: undefined
       }
       submit_record: {
@@ -937,6 +914,21 @@ export type Database = {
           p_upload_ids: string[]
         }
         Returns: string
+      }
+      test_evaluate: {
+        Args: {
+          p_free_min: number
+          p_per_km: number
+          p_target: number
+          p_total: number
+          p_type: Database["public"]["Enums"]["runner_type"]
+          p_zero_won: number
+        }
+        Returns: {
+          outcome: Database["public"]["Enums"]["result_outcome"]
+          penalty_won: number
+          ranked: boolean
+        }[]
       }
       test_reset: { Args: never; Returns: undefined }
       test_set_push_settings: {
@@ -964,6 +956,7 @@ export type Database = {
       membership_role: "admin" | "member"
       record_status: "pending" | "approved" | "rejected" | "expired"
       result_outcome: "success" | "fail" | "not_evaluated"
+      runner_type: "passion" | "free" | "injured"
       week_state: "open" | "closing" | "finalized"
     }
     CompositeTypes: {
@@ -1099,6 +1092,7 @@ export const Constants = {
       membership_role: ["admin", "member"],
       record_status: ["pending", "approved", "rejected", "expired"],
       result_outcome: ["success", "fail", "not_evaluated"],
+      runner_type: ["passion", "free", "injured"],
       week_state: ["open", "closing", "finalized"],
     },
   },
