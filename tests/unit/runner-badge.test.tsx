@@ -34,6 +34,13 @@ describe('Avatar badge', () => {
     const b = render(<Avatar src={null} name="보안관" badge="injured" />);
     expect(b.getByLabelText('보안관 프로필 · 부상러너').className).toContain('grayscale');
   });
+  it('passion → sun ring around the avatar instead of a sticker badge', () => {
+    const { getByRole, container } = render(<Avatar src={null} name="짹리" badge="passion" />);
+    expect(getByRole('img', { name: '열정러너' })).toBeTruthy();
+    expect(container.querySelector('[data-part="sun-ring"]')).toBeTruthy();
+    expect(container.querySelector('[data-part="flame"]')).toBeNull();
+    expect(container.querySelectorAll('[data-part="sun-ray"]').length).toBe(12);
+  });
   it('no badge → plain avatar', () => {
     const { queryByRole, getByLabelText } = render(<Avatar src={null} name="홍길동" />);
     expect(queryByRole('img')).toBeNull();
