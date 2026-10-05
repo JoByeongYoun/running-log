@@ -102,6 +102,27 @@ describe('runner types: settings, snapshot, evaluation, finalize', () => {
     expectRpcError(await owner.client.rpc('schedule_group_settings', { p_group_id: groupId, p_target_meters: 12000, p_free_min_meters: 0 }), 'invalid_input');
   });
 
+  it('schedule_group_settings with p_apply_now updates this week and drops scheduled rows', async () => {
+    await setFakeNow('2026-09-02T03:00:00Z'); // Wed, week 08-31
+    const { owner, groupId } = await setupGroup('b2');
+    // a next-week reservation exists first
+    expect((await owner.client.rpc('schedule_group_settings', { p_group_id: groupId, p_target_meters: 12000 })).data).toBe('2026-09-07');
+
+    const now = await owner.client.rpc('schedule_group_settings', { p_group_id: groupId, p_target_meters: 9000, p_free_min_meters: 3000, p_penalty_per_km_won: 5000, p_zero_km_penalty_won: 50000, p_penalty: '즉시', p_apply_now: true });
+    expect(now.error).toBeNull();
+    expect(now.data).toBe('2026-08-31');
+
+    const rows = (await admin.from('group_settings').select('effective_week_start, target_meters').eq('group_id', groupId).order('effective_week_start')).data!;
+    expect(rows).toEqual([{ effective_week_start: '2026-08-31', target_meters: 9000 }]);
+
+    const week = (await admin.from('group_weeks').select('target_meters, free_min_meters, penalty_per_km_won, zero_km_penalty_won, penalty, state').eq('group_id', groupId).eq('week_start', '2026-08-31').single()).data!;
+    expect(week).toMatchObject({ state: 'open', target_meters: 9000, free_min_meters: 3000, penalty_per_km_won: 5000, zero_km_penalty_won: 50000, penalty: '즉시' });
+
+    // dashboard reflects the new target immediately
+    const dash = (await owner.client.rpc('get_week_dashboard', { p_group_id: groupId, p_week_start: '2026-08-31' })).data as { week: { targetMeters: number } };
+    expect(dash.week.targetMeters).toBe(9000);
+  });
+
   it('new members default to passion; admin changes type with immediate open-week effect; member notified', async () => {
     await setFakeNow('2026-09-02T03:00:00Z'); // prep week 08-31
     const { owner, join, groupId } = await setupGroup('c');

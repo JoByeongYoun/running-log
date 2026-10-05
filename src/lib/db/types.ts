@@ -882,6 +882,7 @@ export type Database = {
       }
       schedule_group_settings: {
         Args: {
+          p_apply_now?: boolean
           p_free_min_meters?: number
           p_group_id: string
           p_penalty?: string

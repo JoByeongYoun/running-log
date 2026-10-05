@@ -16,7 +16,7 @@ const settingsFields = {
   penalty: penaltyNoteSchema.optional(),
 };
 const createSchema = z.object({ name: groupNameSchema, ...settingsFields });
-const scheduleSchema = z.object({ groupId: uuidSchema, ...settingsFields });
+const scheduleSchema = z.object({ groupId: uuidSchema, ...settingsFields, applyNow: z.literal('on').optional() });
 
 function rpcSettings(d: z.infer<typeof createSchema> | z.infer<typeof scheduleSchema>) {
   // DB 함수는 빈 문자열을 null 로 정규화한다 (생성된 타입이 null 을 받지 않아 '' 로 보낸다)
@@ -56,10 +56,11 @@ export async function scheduleSettings(_prev: ActionState, formData: FormData): 
   const parsed = scheduleSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: firstIssue(parsed.error) };
   const supabase = await createServerSupabase();
-  const { data, error } = await supabase.rpc('schedule_group_settings', { p_group_id: parsed.data.groupId, ...rpcSettings(parsed.data) });
+  const applyNow = parsed.data.applyNow === 'on';
+  const { data, error } = await supabase.rpc('schedule_group_settings', { p_group_id: parsed.data.groupId, ...rpcSettings(parsed.data), p_apply_now: applyNow });
   if (error) return { error: messageForError(error) };
-  revalidatePath('/admin'); revalidatePath('/group');
-  return { success: `${data}부터 적용됩니다.` };
+  revalidatePath('/'); revalidatePath('/admin'); revalidatePath('/group');
+  return { success: applyNow ? `이번 주(${data})부터 바로 적용했습니다.` : `${data}부터 적용됩니다.` };
 }
 
 export async function setGroupNotice(_prev: ActionState, formData: FormData): Promise<ActionState> {

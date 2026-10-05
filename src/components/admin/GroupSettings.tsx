@@ -1,5 +1,5 @@
 'use client';
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 import { renameGroup, scheduleSettings, setGroupNotice } from '@/actions/group';
 import type { ActionState } from '@/actions/auth';
 import { Input, Textarea } from '@/components/ui/Input';
@@ -17,6 +17,7 @@ export function GroupSettings({ groupId, name, current, scheduled, notice }: Pro
   const [nameState, nameAction] = useActionState<ActionState, FormData>(renameGroup, {});
   const [setState, setAction] = useActionState<ActionState, FormData>(scheduleSettings, {});
   const base = scheduled ?? current;
+  const [applyNow, setApplyNow] = useState(false);
   return (
     <div className="space-y-4">
       <Card>
@@ -52,9 +53,19 @@ export function GroupSettings({ groupId, name, current, scheduled, notice }: Pro
           <Input label="미달 1km당 벌금 (원)" name="perKmWon" inputMode="numeric" required defaultValue={base.penaltyPerKmWon.toLocaleString('ko-KR')} hint="미달 거리는 1km 단위로 올림. 최대 1,000,000원" />
           <Input label="0km 벌금 (원)" name="zeroWon" inputMode="numeric" required defaultValue={base.zeroKmPenaltyWon.toLocaleString('ko-KR')} hint="한 번도 안 달리면 km당 벌금 대신 이 금액" />
           <Textarea label="벌칙 메모 (선택)" name="penalty" maxLength={500} rows={2} defaultValue={base.penalty ?? ''} placeholder="예: 정산은 일요일 밤, 계좌는 공지 참고" />
-          <p className="text-xs text-slate-500">변경은 다음 주 월요일부터 적용됩니다. 같은 주에 다시 저장하면 예약을 대체합니다.</p>
+          <label className="flex items-start gap-2 text-sm">
+            <input type="checkbox" name="applyNow" checked={applyNow} onChange={(e) => setApplyNow(e.target.checked)} className="mt-0.5 h-4 w-4 rounded border-slate-300" />
+            <span>
+              이번 주부터 바로 적용
+              <span className="block text-xs text-slate-500">
+                {applyNow
+                  ? '진행 중인 이번 주 목표·벌금이 즉시 바뀌고, 예약돼 있던 다음 주 설정은 사라집니다.'
+                  : '끄면 다음 주 월요일부터 적용됩니다. 같은 주에 다시 저장하면 예약을 대체합니다.'}
+              </span>
+            </span>
+          </label>
           <FormMessage error={setState.error} success={setState.success} />
-          <SubmitButton full>다음 주부터 적용</SubmitButton>
+          <SubmitButton full>{applyNow ? '이번 주부터 바로 적용' : '다음 주부터 적용'}</SubmitButton>
         </form>
       </Card>
     </div>
