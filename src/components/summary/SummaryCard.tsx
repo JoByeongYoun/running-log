@@ -1,6 +1,5 @@
 import { forwardRef } from 'react';
 import { formatMeters } from '@/lib/domain/distance';
-import { formatWon } from '@/lib/domain/penalty';
 import { assignRanks } from '@/lib/domain/rank';
 import { formatWeekRange } from '@/lib/domain/week';
 import { Avatar } from '@/components/ui/Avatar';
@@ -39,11 +38,11 @@ export const SummaryCard = forwardRef<HTMLDivElement, { summary: WeekSummary; pa
         </div>
         <span className={`rounded-full px-2 py-0.5 text-xs ${summary.provisional ? 'bg-amber-100 text-amber-800' : 'bg-slate-900 text-white'}`}>{summary.provisional ? '잠정 결과' : '확정'}</span>
       </div>
-      <p className="mt-1 text-sm text-slate-600">열정 {formatMeters(week.targetMeters)}km · 자유 {formatMeters(week.freeMinMeters)}km · 1km당 {formatWon(week.penaltyPerKmWon)}{week.penalty ? ` · ${week.penalty}` : ''}</p>
+      <p className="mt-1 text-sm text-slate-600">열정 {formatMeters(week.targetMeters)}km · 자유 {formatMeters(week.freeMinMeters)}km{week.penalty ? ` · ${week.penalty}` : ''}</p>
       {me && page === 0 && (
         <div className={`mt-3 rounded-xl p-3 ${me.outcome.includes('success') ? 'bg-emerald-50' : me.outcome.includes('fail') ? 'bg-red-50' : 'bg-slate-50'}`}>
           <p className="text-xs text-slate-500">나의 결과</p>
-          <p className="text-xl font-bold">{outcomeText(me)} · {formatMeters(me.approvedMeters)} km{displayRank.has(me.userId) ? ` · ${displayRank.get(me.userId)}위` : ''}{me.penaltyWon > 0 ? ` · ${formatWon(me.penaltyWon)}` : ''}</p>
+          <p className="text-xl font-bold">{outcomeText(me)} · {formatMeters(me.approvedMeters)} km{displayRank.has(me.userId) ? ` · ${displayRank.get(me.userId)}위` : ''}</p>
         </div>
       )}
       <ol className="mt-3 divide-y divide-slate-100">
@@ -53,7 +52,6 @@ export const SummaryCard = forwardRef<HTMLDivElement, { summary: WeekSummary; pa
             <Avatar src={m.avatarUrl ?? null} name={m.nickname} size={24} badge={m.runnerType} />
             <span className="min-w-0 flex-1 truncate">{m.nickname}{m.leftDuringWeek || !m.activeNow ? <span className="ml-1 text-xs font-normal text-slate-400">탈퇴</span> : null}</span>
             <span className="tabular-nums">{formatMeters(m.approvedMeters)} km</span>
-            {m.penaltyWon > 0 && <span className="text-xs tabular-nums text-red-600">{formatWon(m.penaltyWon)}</span>}
             <span className={`w-14 text-right text-xs ${outcomeText(m) === '성공' ? 'text-emerald-700' : outcomeText(m) === '실패' ? 'text-red-600' : 'text-slate-500'}`}>{outcomeText(m)}</span>
           </li>
         ))}
@@ -69,7 +67,6 @@ export const SummaryCard = forwardRef<HTMLDivElement, { summary: WeekSummary; pa
             {preps.length > 0 && <p><span className="text-slate-500">준비 주간</span> {preps.map((m) => m.nickname).join(', ')}</p>}
             {injured.length > 0 && <p><span className="text-slate-500">부상</span> {injured.map((m) => m.nickname).join(', ')}</p>}
           </div>
-          {summary.penaltyTotalWon > 0 && <div className="col-span-2 rounded-xl bg-red-50 p-2"><p className="text-slate-500">벌금 합계</p><p className="text-base font-bold text-red-700">{formatWon(summary.penaltyTotalWon)}</p></div>}
         </div>
       )}
     </div>
