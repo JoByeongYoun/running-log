@@ -796,7 +796,14 @@ export type Database = {
       claim_summary_auto_show: { Args: never; Returns: Json }
       cleanup_expired_uploads: { Args: never; Returns: string[] }
       create_group: {
-        Args: { p_name: string; p_penalty: string; p_target_meters: number }
+        Args: {
+          p_free_min_meters?: number
+          p_name: string
+          p_penalty?: string
+          p_penalty_per_km_won?: number
+          p_target_meters: number
+          p_zero_km_penalty_won?: number
+        }
         Returns: {
           group_id: string
           invite_code: string
@@ -829,10 +836,13 @@ export type Database = {
         Args: { p_code: string }
         Returns: {
           archived: boolean
+          free_min_meters: number
           group_id: string
           name: string
           penalty: string
+          penalty_per_km_won: number
           target_meters: number
+          zero_km_penalty_won: number
         }[]
       }
       mark_notifications_read: { Args: { p_ids: string[] }; Returns: undefined }
@@ -871,12 +881,27 @@ export type Database = {
         Returns: undefined
       }
       schedule_group_settings: {
-        Args: { p_group_id: string; p_penalty: string; p_target_meters: number }
+        Args: {
+          p_free_min_meters?: number
+          p_group_id: string
+          p_penalty?: string
+          p_penalty_per_km_won?: number
+          p_target_meters: number
+          p_zero_km_penalty_won?: number
+        }
         Returns: string
       }
       set_fake_now: { Args: { p: string }; Returns: undefined }
       set_group_notice: {
         Args: { p_group_id: string; p_notice: string }
+        Returns: undefined
+      }
+      set_member_runner_type: {
+        Args: {
+          p_group_id: string
+          p_type: Database["public"]["Enums"]["runner_type"]
+          p_user_id: string
+        }
         Returns: undefined
       }
       submit_record: {
