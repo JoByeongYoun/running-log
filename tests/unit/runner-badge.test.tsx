@@ -7,10 +7,17 @@ import { Avatar } from '@/components/ui/Avatar';
 afterEach(cleanup);
 
 describe('RunnerBadge', () => {
-  it('exposes the type label to assistive tech and shows the short text', () => {
-    const { getByRole, getByText } = render(<RunnerBadge type="passion" />);
+  it('passion badge has the label for assistive tech but no text, only the flame', () => {
+    const { getByRole, queryByText, container } = render(<RunnerBadge type="passion" />);
     expect(getByRole('img', { name: '열정러너' })).toBeTruthy();
-    expect(getByText('열정')).toBeTruthy();
+    expect(queryByText('열정')).toBeNull();
+    expect(container.querySelector('[data-part="flame"]')).toBeTruthy();
+  });
+  it('free badge is a plain circle with the short text', () => {
+    const { getByRole, getByText, container } = render(<RunnerBadge type="free" />);
+    expect(getByRole('img', { name: '자유러너' })).toBeTruthy();
+    expect(getByText('자유')).toBeTruthy();
+    expect(container.querySelector('linearGradient, radialGradient')).toBeNull();
   });
   it('injured badge has no text, only the cross', () => {
     const { getByRole, queryByText } = render(<RunnerBadge type="injured" />);
