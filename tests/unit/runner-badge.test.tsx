@@ -39,7 +39,7 @@ describe('Avatar badge', () => {
     expect(getByRole('img', { name: '열정러너' })).toBeTruthy();
     expect(container.querySelector('[data-part="sun-ring"]')).toBeTruthy();
     expect(container.querySelector('[data-part="flame"]')).toBeNull();
-    expect(container.querySelectorAll('[data-part="sun-ray"]').length).toBe(12);
+    expect(container.querySelectorAll('[data-part="flame-tongue"]').length).toBe(36); // 12 + 14 + 10 세 겹
   });
   it('no badge → plain avatar', () => {
     const { queryByRole, getByLabelText } = render(<Avatar src={null} name="홍길동" />);
