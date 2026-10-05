@@ -81,22 +81,6 @@ input, textarea, select, button { font: inherit; }
 .track-bob {
   animation: track-bob 1.4s ease-in-out 1s infinite;
 }
-/* 열정러너 불꽃 테두리: 겹마다 반대 방향으로 일렁이고 글로우가 숨 쉰다 */
-@keyframes sun-flame-a {
-  0%, 100% { transform: rotate(0deg) scale(1); }
-  50% { transform: rotate(-3deg) scale(1.04); }
-}
-@keyframes sun-flame-b {
-  0%, 100% { transform: rotate(0deg) scale(1); }
-  50% { transform: rotate(4deg) scale(0.97); }
-}
-@keyframes sun-glow {
-  0%, 100% { opacity: 0.55; }
-  50% { opacity: 0.85; }
-}
-.sun-flame-a { transform-origin: 50px 50px; animation: sun-flame-a 1.6s ease-in-out infinite; }
-.sun-flame-b { transform-origin: 50px 50px; animation: sun-flame-b 1.1s ease-in-out infinite; }
-.sun-glow { animation: sun-glow 1.4s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) {
-  .track-bob, .sun-flame-a, .sun-flame-b, .sun-glow { animation: none; }
+  .track-bob { animation: none; }
 }
