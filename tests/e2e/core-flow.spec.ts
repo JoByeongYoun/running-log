@@ -18,8 +18,7 @@ test('signup → group → invite → record → approve → dashboard', async (
   // create group
   await owner.getByRole('button', { name: '그룹 만들기' }).click();
   await owner.getByLabel('그룹명').fill('E2E 러너');
-  await owner.getByLabel('1인당 주간 목표 거리 (km)').fill('10');
-  await owner.getByLabel('실패 시 벌칙').fill('커피');
+  await owner.getByLabel('열정러너 주간 목표 (km)').fill('10');
   await owner.getByRole('button', { name: '그룹 만들기' }).click();
   await owner.waitForURL(/\/admin\?tab=members/);
   const code = (await owner.locator('p.font-mono').textContent())!.trim();
@@ -46,6 +45,22 @@ test('signup → group → invite → record → approve → dashboard', async (
   await owner.getByRole('button', { name: '승인' }).click();
   await expect(owner.getByText('대기 중인 참여 요청이 없습니다')).toBeVisible();
 
+  // owner changes the member's runner type to 자유러너; badge shows on the dashboard
+  await owner.goto('/admin?tab=members');
+  const memberGroup = owner.getByRole('radiogroup', { name: '멤버 러너 유형' });
+  await expect(memberGroup.getByRole('radio', { name: '열정러너' })).toHaveAttribute('aria-checked', 'true');
+  await memberGroup.getByRole('radio', { name: '자유러너' }).click();
+  await owner.getByRole('button', { name: '변경' }).click();
+  await expect(owner.getByText('자유러너로 바꿨습니다.')).toBeVisible();
+  await expect(memberGroup.getByRole('radio', { name: '자유러너' })).toHaveAttribute('aria-checked', 'true');
+
+  await member.goto('/');
+  await expect(member.getByRole('img', { name: '자유러너' }).first()).toBeVisible();
+  await member.goto('/profile');
+  await expect(member.getByText('자유러너', { exact: true })).toBeVisible();
+  await member.goto('/notifications');
+  await expect(member.getByText('방장이 회원님을 자유러너로 변경했습니다.')).toBeVisible();
+
   // member submits a record
   await member.goto('/record');
   await expect(member.getByRole('heading', { name: 'E2E 러너' })).toBeVisible();
@@ -55,7 +70,8 @@ test('signup → group → invite → record → approve → dashboard', async (
   await member.getByRole('button', { name: '오늘 기록 제출' }).click();
   await expect(member.getByText('기록을 등록했습니다. 관리자 승인을 기다려 주세요.')).toBeVisible();
   await member.waitForURL('/');
-  await expect(member.getByText('승인 대기 5.25 km (합계 미포함)')).toBeVisible();
+  // 트랙 위에 승인 대기 조각이 기록 상세 링크로 올라간다
+  await expect(member.getByRole('link', { name: /5\.25 km · 승인 대기/ })).toBeVisible();
 
   // owner reviews
   await owner.goto('/admin?tab=reviews');
@@ -65,9 +81,13 @@ test('signup → group → invite → record → approve → dashboard', async (
 
   // dashboard reflects approval
   await member.goto('/');
-  await expect(member.getByText('5.25', { exact: false }).first()).toBeVisible();
-  await expect(member.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '53');
-  await expect(member.getByText('이번 주는 준비 주간입니다', { exact: false })).toBeVisible();
+  await expect(member.getByRole('link', { name: /5\.25 km · 승인됨/ })).toBeVisible();
+  // 러너를 누르면 멤버 모달: 자유러너 최소 5km 기준 진행률 100%, 가입 주라 준비 주간
+  await member.getByRole('button', { name: /^멤버 이번 주 기록 보기/ }).click();
+  await expect(member.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '100');
+  await expect(member.getByText('준비 주간', { exact: true })).toBeVisible();
+  await expect(member.getByText('자유러너', { exact: true })).toBeVisible();
+  await member.getByRole('button', { name: '닫기' }).click();
 
   // record detail with comment
   await member.locator('a[href^="/records/"]').first().click();

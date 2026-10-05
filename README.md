@@ -9,7 +9,7 @@
 
 | 위치 | 역할 |
 |---|---|
-| `supabase/migrations/0001~0010` | 스키마·RLS·그룹/기록/주차/알림 함수. 모든 상태 변경은 `security definer` 함수 안에서 잠금·단일 트랜잭션으로 처리 |
+| `supabase/migrations/0001~0015` | 스키마·RLS·그룹/기록/주차/알림 함수. 모든 상태 변경은 `security definer` 함수 안에서 잠금·단일 트랜잭션으로 처리 |
 | `src/lib/domain` | 주차·거리·순위 순수 로직 (`Asia/Seoul` 고정) |
 | `src/actions` | Server Actions: 입력 검증(zod) → `rpc` |
 | `src/app` | 화면 (`/`, `/admin`, `/records/[id]`, `/notifications`, `/profile`, `/join/[code]`, `/groups/new`, `/onboarding`, 인증) |
@@ -18,7 +18,7 @@
 | `src/app/sw.js` | 서비스 워커 (정적 자산만 캐시, 개인화 응답 미캐시, 수동 업데이트) |
 | `tests/unit`, `tests/integration`, `tests/e2e` | Vitest 단위·통합(로컬 Supabase), Playwright 핵심 흐름 |
 
-핵심 규칙(스펙 2절)은 DB 함수가 강제한다: 회원당 활성 그룹 1개, 그룹당 관리자 1명, 오늘 날짜만 등록, 승인 거리만 합산, 지난주 기록은 월요일까지 등록 가능, 화요일 12:00 검토 유예 후 `expired`, 확정 결과 불변, 자동 요약 1회 claim.
+핵심 규칙(스펙 2절)은 DB 함수가 강제한다: 회원당 활성 그룹 1개, 그룹당 관리자 1명, 오늘 날짜만 등록, 승인 거리만 합산, 지난주 기록은 월요일까지 등록 가능, 화요일 12:00 검토 유예 후 `expired`, 확정 결과 불변, 자동 요약 1회 claim. 멤버 러너 유형(열정/자유/부상)은 관리자만 바꾸며, 유형별 목표와 미달 1km당·0km 벌금은 그룹 설정으로 두고 주차마다 스냅샷한다. 판정·벌금은 DB 함수 `app.evaluate` 한 곳에서 계산한다(`src/lib/domain/penalty.ts`와 교차 테스트).
 
 ## 로컬 개발
 

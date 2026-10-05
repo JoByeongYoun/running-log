@@ -51,7 +51,7 @@ async function cleanup() {
 async function main() {
   await cleanup();
   const owner = await user('demo-admin@local.test', '러닝반장', { r: 52, g: 211, b: 153 });
-  const { data: g } = await owner.client.rpc('create_group', { p_name: '데모 러닝 크루', p_target_meters: 15000, p_penalty: '다음 모임 커피 쏘기' });
+  const { data: g } = await owner.client.rpc('create_group', { p_name: '데모 러닝 크루', p_target_meters: 15000, p_penalty: '정산은 일요일 밤', p_free_min_meters: 5000, p_penalty_per_km_won: 10000, p_zero_km_penalty_won: 100000 });
   const code = g![0].invite_code;
   const members = [];
   for (const [i, name] of ['새벽러너', '퇴근런', '주말조깅'].entries()) {
@@ -60,6 +60,8 @@ async function main() {
     await owner.client.rpc('review_join_request', { p_request_id: req, p_approve: true });
     members.push(m);
   }
+  await owner.client.rpc('set_member_runner_type', { p_group_id: g![0].group_id, p_user_id: members[1].id, p_type: 'free' });
+  await owner.client.rpc('set_member_runner_type', { p_group_id: g![0].group_id, p_user_id: members[2].id, p_type: 'injured' });
   const r1 = await record(members[0], 5.2);
   await owner.client.rpc('review_record', { p_record_id: r1, p_action: 'approve', p_reason: '', p_expected_version: 1 });
   await record(members[1], 3.4);
