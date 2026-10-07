@@ -3,6 +3,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { PhotoLightbox } from '@/components/record/PhotoLightbox';
 import { formatMeters } from '@/lib/domain/distance';
+import { RUNNER_TYPE_LABEL } from '@/lib/domain/runner-type';
 import { RankBadge } from './RankBadge';
 import { Avatar } from '@/components/ui/Avatar';
 import { Modal } from '@/components/ui/Modal';
@@ -25,7 +26,7 @@ type Props = { member: MemberRow | null; data: WeekDashboard; isMe: boolean; onC
 export function MemberModal({ member, data, isMe, onClose }: Props) {
   const m = member;
   const [avatarOpen, setAvatarOpen] = useState(false);
-  const target = data.week.targetMeters;
+  const target = m?.goalMeters ?? data.week.targetMeters;
   const approved = m?.approvedMeters ?? 0;
   const pending = m?.pendingMeters ?? 0;
   const pct = target > 0 ? Math.min(100, Math.round((approved / target) * 100)) : 0;
@@ -38,8 +39,9 @@ export function MemberModal({ member, data, isMe, onClose }: Props) {
   const records = m?.days.flatMap((d) => d.records.map((r) => ({ ...r, date: d.date }))) ?? [];
   const backParam = `?week=${data.week.weekStart}&from=home`;
   const finalized = data.week.state === 'finalized';
-  const outcomeLabel = m ? (m.resting ? '휴식 · 평가 제외' : m.joinedThisWeek ? '준비 주간' : finalized ? OUTCOME_LABEL[m.outcome] : '') : '';
-  const outcomeKey: Outcome = m ? (m.resting || m.joinedThisWeek ? 'not_evaluated' : m.outcome) : 'not_evaluated';
+  const injured = m?.runnerType === 'injured';
+  const outcomeLabel = m ? (injured ? '부상 · 평가 제외' : m.joinedThisWeek ? '준비 주간' : finalized ? OUTCOME_LABEL[m.outcome] : '') : '';
+  const outcomeKey: Outcome = m ? (injured || m.joinedThisWeek ? 'not_evaluated' : m.outcome) : 'not_evaluated';
 
   return (
     <Modal open={Boolean(m)} onClose={onClose} title={m ? `${m.nickname} 이번 주 기록` : ''} bare>
@@ -56,10 +58,10 @@ export function MemberModal({ member, data, isMe, onClose }: Props) {
                   <div className="rounded-full bg-[#fdfaef] p-[2px]">
                     {m.avatarUrl ? (
                       <button type="button" onClick={() => setAvatarOpen(true)} aria-label={`${m.nickname} 프로필 사진 확대`} className="block rounded-full">
-                        <Avatar src={m.avatarUrl} name={m.nickname} size={72} resting={m.resting} />
+                        <Avatar src={m.avatarUrl} name={m.nickname} size={72} badge={m.runnerType} />
                       </button>
                     ) : (
-                      <Avatar src={null} name={m.nickname} size={72} resting={m.resting} />
+                      <Avatar src={null} name={m.nickname} size={72} badge={m.runnerType} />
                     )}
                   </div>
                 </div>
@@ -74,7 +76,8 @@ export function MemberModal({ member, data, isMe, onClose }: Props) {
                 </p>
                 <p className="mt-0.5 text-xs text-slate-500">{data.week.groupName} · {data.week.weekStart} 주</p>
                 <div className="mt-2 flex flex-wrap gap-1.5">
-                  {outcomeLabel && <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ${OUTCOME_STYLE[outcomeKey]}`}>{outcomeLabel}</span>}
+                  <span className="rounded-full bg-slate-900 px-2 py-0.5 text-[11px] font-medium text-white">{RUNNER_TYPE_LABEL[m.runnerType]}</span>
+                  {outcomeLabel &&<span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ${OUTCOME_STYLE[outcomeKey]}`}>{outcomeLabel}</span>}
                   {(m.leftDuringWeek || !m.activeNow) && <span className="rounded-full bg-white/70 px-2 py-0.5 text-[11px] text-slate-500 ring-1 ring-black/5">탈퇴</span>}
                 </div>
               </div>
@@ -88,10 +91,10 @@ export function MemberModal({ member, data, isMe, onClose }: Props) {
                   <span className="ml-1 text-base font-semibold text-red-600">km</span>
                 </p>
                 <p className="text-right text-xs text-slate-500">
-                  목표 {formatMeters(target)} km
+                  {injured ? '평가 제외' : <>목표 {formatMeters(target)} km</>}
                   <br />
                   <span className="font-semibold text-slate-900">
-                    {remaining > 0 ? `남은 ${formatMeters(remaining)} km` : over > 0 ? `+${formatMeters(over)} km 초과 달성` : '목표 달성'}
+                    {injured ? '' : remaining > 0 ? `남은 ${formatMeters(remaining)} km` : over > 0 ? `+${formatMeters(over)} km 초과 달성` : '목표 달성'}
                   </span>
                 </p>
               </div>

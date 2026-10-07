@@ -5,7 +5,7 @@ import { ProfileForm } from './ProfileForm';
 import { AppHeader } from '@/components/layout/AppHeader';
 import { PushSection } from './PushSection';
 import { LeaveGroupSection } from './LeaveGroupSection';
-import { RestSection } from './RestSection';
+import { MyRunnerType } from './MyRunnerType';
 import { getGroupState } from '@/lib/group-state';
 
 export default async function ProfilePage() {
@@ -24,12 +24,7 @@ export default async function ProfilePage() {
       <main className="mx-auto w-full max-w-md space-y-8 px-5 py-6">
         <ProfileForm userId={session.user.id} nickname={session.profile.nickname ?? ''} avatarUrl={avatarUrl} />
         <PushSection />
-        <RestSection
-          groupName={membership?.groupName ?? null}
-          resting={membership?.resting ?? false}
-          restStartedAt={membership?.restStartedAt ?? null}
-          pendingRequest={state.pendingRestRequest}
-        />
+        <MyRunnerType groupName={membership?.groupName ?? null} type={membership?.runnerType ?? null} />
         <LeaveGroupSection
           groupName={membership?.groupName ?? null}
           isAdmin={membership?.role === 'admin'}

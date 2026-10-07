@@ -26,15 +26,22 @@ input, textarea, select, button { font: inherit; }
     radial-gradient(120% 90% at 50% 40%, rgba(255, 255, 255, 0.10), rgba(0, 0, 0, 0.10)),
     repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.09) 0 26px, transparent 26px 52px);
 }
-/* 붉은 타탄 표면: 미세한 입자 질감 */
+/* 유형별 섹션: 머리말 띠 색 */
+.track-section.is-passion { background-color: #c2410c; }
+.track-section.is-free { background-color: #1d4ed8; }
+.track-section.is-injured { background-color: #4b5563; }
+/* 타탄 표면: 미세한 입자 질감. 열정은 붉은, 자유는 파란, 부상은 회색 트랙 */
 .track-surface {
-  background-color: #d5503a;
+  --track-color: #d5503a;
+  background-color: var(--track-color);
   background-image:
     radial-gradient(rgba(255, 255, 255, 0.10) 0.6px, transparent 0.6px),
     radial-gradient(rgba(0, 0, 0, 0.12) 0.6px, transparent 0.6px);
   background-size: 6px 6px, 7px 7px;
   background-position: 0 0, 3px 4px;
 }
+.track-section.is-free .track-surface { --track-color: #3b82f6; }
+.track-section.is-injured .track-surface { --track-color: #9ca3af; }
 /* 레인 사이 흰 구분선 */
 .track-lane + .track-lane {
   border-top: 2px solid rgba(255, 255, 255, 0.8);
@@ -46,6 +53,14 @@ input, textarea, select, button { font: inherit; }
 }
 .track-seg-approved.is-alt {
   background-image: linear-gradient(180deg, #ecfccb, #bef264 60%, #a3e635);
+}
+/* 열정러너 승인 조각: 금빛 트레일 — 더 특별하게 */
+.track-section.is-passion .track-seg-approved {
+  background-image: linear-gradient(180deg, #fef08a, #facc15 60%, #eab308);
+  box-shadow: 0 0 12px rgba(250, 204, 21, 0.7), inset 0 -1px 0 rgba(0, 0, 0, 0.15);
+}
+.track-section.is-passion .track-seg-approved.is-alt {
+  background-image: linear-gradient(180deg, #fef9c3, #fde047 60%, #facc15);
 }
 /* 승인 대기 조각: 노랑 빗금 */
 .track-seg-pending {

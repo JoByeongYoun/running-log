@@ -1,8 +1,8 @@
 import Link from 'next/link';
 import { createServerSupabase, getSessionUser } from '@/lib/supabase/server';
 import { getGroupState } from '@/lib/group-state';
-import { formatMeters } from '@/lib/domain/distance';
 import { AppHeader } from '@/components/layout/AppHeader';
+import { RulesLine } from '@/components/group/RulesLine';
 import { Card, ErrorState } from '@/components/ui/States';
 import { Button } from '@/components/ui/Button';
 import { JoinButton } from './JoinButton';
@@ -27,10 +27,7 @@ export default async function JoinPage({ params }: PageProps<'/join/[code]'>) {
               <p className="text-sm text-slate-500">초대받은 그룹</p>
               <h2 className="text-xl font-bold">{invite.name}</h2>
             </div>
-            <dl className="space-y-1 text-sm text-slate-700">
-              <div className="flex justify-between"><dt>1인당 주간 목표</dt><dd>{formatMeters(invite.target_meters)} km</dd></div>
-              <div className="flex justify-between gap-4"><dt className="shrink-0">실패 시 벌칙</dt><dd className="text-right">{invite.penalty}</dd></div>
-            </dl>
+            <RulesLine rules={{ targetMeters: invite.target_meters, freeMinMeters: invite.free_min_meters, penaltyPerKmWon: invite.penalty_per_km_won, zeroKmPenaltyWon: invite.zero_km_penalty_won, penalty: invite.penalty }} />
             {invite.archived ? (
               <p className="rounded-xl bg-slate-100 px-3 py-2 text-sm">보관된 그룹이라 참여할 수 없습니다.</p>
             ) : !session ? (
