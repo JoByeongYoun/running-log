@@ -4,8 +4,9 @@ import Link from 'next/link';
 import { formatMeters } from '@/lib/domain/distance';
 import { assignRanks } from '@/lib/domain/rank';
 import { buildTrack, type TrackLane, type TrackSegment } from '@/lib/dashboard/track';
-import { RUNNER_TYPE_SHORT } from '@/lib/domain/runner-type';
+import { RUNNER_TYPE_LABEL, type RunnerType } from '@/lib/domain/runner-type';
 import { Avatar } from '@/components/ui/Avatar';
+import { RunnerBadge } from '@/components/ui/RunnerBadge';
 import { MemberModal } from './MemberModal';
 import { RankBadge } from './RankBadge';
 import { OUTCOME_LABEL, STATUS_LABEL, type MemberRow, type WeekDashboard } from '@/lib/dashboard/types';
@@ -27,6 +28,15 @@ function dateLabel(date: string) {
   return `${Number(m)}/${Number(d)}`;
 }
 
+/** 트랙은 러너 유형별로 분리된다. 열정 → 자유 → 부상 순. */
+const SECTIONS: readonly RunnerType[] = ['passion', 'free', 'injured'];
+
+/** 섹션 머리말 아이콘: 열정은 🔥, 자유는 구름 뱃지, 부상은 ⛔ */
+function SectionIcon({ type, size = 18 }: { type: RunnerType; size?: number }) {
+  if (type === 'free') return <RunnerBadge type="free" size={size + 4} className="-mx-0.5" />;
+  return <span className="leading-none" style={{ fontSize: size }} aria-hidden>{type === 'passion' ? '🔥' : '⛔'}</span>;
+}
+
 export function WeekTrack({ data, myId }: { data: WeekDashboard; myId: string }) {
   const [profile, setProfile] = useState<MemberRow | null>(null);
   const [ran, setRan] = useState(false);
@@ -36,10 +46,10 @@ export function WeekTrack({ data, myId }: { data: WeekDashboard; myId: string })
   }, []);
 
   const backParam = `?week=${data.week.weekStart}&from=home`;
-  const track = buildTrack(data.members, data.week.targetMeters);
   // 판정용 순위(m.rank)는 준비 주간 멤버가 null이므로, 표시용 순위는 열정러너 전체를 승인 거리로 매긴다. 자유·부상은 순위 없음.
   const finalized = data.week.state === 'finalized';
   const displayRank = new Map(assignRanks(data.members.filter((m) => m.runnerType === 'passion').map((m) => ({ userId: m.userId, totalMeters: m.approvedMeters }))).map((r) => [r.userId, r.rank]));
+  const goalOf: Record<RunnerType, number | null> = { passion: data.week.targetMeters, free: data.week.freeMinMeters, injured: null };
 
   return (
     <section className="track-stadium overflow-hidden rounded-2xl p-3 text-white shadow-md ring-1 ring-green-700/40 sm:p-4" aria-labelledby="week-track-title">
@@ -47,55 +57,69 @@ export function WeekTrack({ data, myId }: { data: WeekDashboard; myId: string })
         <h2 id="week-track-title" className="flex items-center gap-1.5 font-bold tracking-tight">
           <span aria-hidden>🏟️</span> 주간 트랙
         </h2>
-        <span className="rounded-full bg-white/25 px-2.5 py-0.5 text-xs font-semibold tabular-nums ring-1 ring-white/40">
-          GOAL {formatMeters(data.week.targetMeters)} km
+        <span className="flex items-center gap-1 rounded-full bg-white/25 px-2.5 py-0.5 text-xs font-semibold tabular-nums ring-1 ring-white/40">
+          <SectionIcon type="passion" size={13} /> 열정 {formatMeters(data.week.targetMeters)}km
+          <span className="opacity-70">·</span>
+          <SectionIcon type="free" size={13} /> 자유 {formatMeters(data.week.freeMinMeters)}km
         </span>
       </div>
 
       {data.members.length === 0 ? (
         <p className="track-text py-4 text-center text-sm text-white/90">이 주에는 멤버가 없습니다.</p>
       ) : (
-        <div className="flex items-stretch gap-2">
-          {/* 순위 열: 확정된 주에만 메달을 보여준다 */}
-          {finalized && (
-            <ol className="flex w-7 shrink-0 flex-col pt-5" aria-hidden>
-              {data.members.map((m) => (
-                <li key={m.userId} className="flex items-start justify-center" style={{ height: LANE_H, paddingTop: TRAIL_Y - 10 }}>
-                  {m.runnerType === 'passion' ? <RankBadge rank={displayRank.get(m.userId)} /> : <span className="text-[10px] font-bold text-white/70">{RUNNER_TYPE_SHORT[m.runnerType]}</span>}
-                </li>
-              ))}
-            </ol>
-          )}
-
-          {/* 트랙 */}
-          <div className="relative min-w-0 flex-1">
-            {/* 결승 깃발 */}
-            <div className="relative h-5" style={{ marginLeft: TRACK_PAD, marginRight: TRACK_PAD }}>
-              <span className="absolute top-0 -translate-x-1/2 text-sm leading-none drop-shadow" style={{ left: `${track.goalPct}%` }} aria-hidden>🏁</span>
-            </div>
-            <div className="track-surface relative overflow-hidden rounded-xl ring-2 ring-white/80">
-              {/* 출발선·결승선: 모든 레인 관통 */}
-              <div className="pointer-events-none absolute inset-y-0 z-10" style={{ left: TRACK_PAD, right: TRACK_PAD }} aria-hidden>
-                <div className="absolute inset-y-0 left-0 w-[3px] -translate-x-1/2 bg-white" />
-                <div className="track-finish absolute inset-y-0 w-2.5 -translate-x-1/2 shadow-[0_0_0_1px_rgba(255,255,255,0.9)]" style={{ left: `${track.goalPct}%` }} />
+        <div className="flex flex-col gap-3">
+          {SECTIONS.map((type) => {
+            const members = data.members.filter((m) => m.runnerType === type);
+            if (members.length === 0) return null;
+            const goal = goalOf[type];
+            // 부상은 목표가 없으니 열정 목표를 눈금으로만 쓴다
+            const track = buildTrack(members, goal ?? data.week.targetMeters);
+            return (
+              <div key={type} className={`track-section is-${type} overflow-hidden rounded-xl ring-2 ring-white/80`}>
+                <div className="track-text flex items-center justify-between gap-2 px-3 py-1.5 text-sm font-bold">
+                  <span className="flex items-center gap-1.5">
+                    <SectionIcon type={type} />
+                    {RUNNER_TYPE_LABEL[type]}
+                    <span className="text-xs font-semibold text-white/85">· {goal === null ? '평가 제외' : `목표 ${formatMeters(goal)}km`}</span>
+                  </span>
+                  {goal !== null && <span className="text-sm leading-none" aria-hidden>🏁</span>}
+                </div>
+                <div className="flex items-stretch">
+                  {/* 순위 열: 확정된 주의 열정러너에게만 메달 */}
+                  {finalized && type === 'passion' && (
+                    <ol className="flex w-7 shrink-0 flex-col border-r-2 border-white/80" aria-hidden>
+                      {members.map((m) => (
+                        <li key={m.userId} className="flex items-start justify-center" style={{ height: LANE_H, paddingTop: TRAIL_Y - 10 }}>
+                          <RankBadge rank={displayRank.get(m.userId)} />
+                        </li>
+                      ))}
+                    </ol>
+                  )}
+                  <div className="track-surface relative min-w-0 flex-1 overflow-hidden border-t-2 border-white/80">
+                    {/* 출발선·결승선: 모든 레인 관통 */}
+                    <div className="pointer-events-none absolute inset-y-0 z-10" style={{ left: TRACK_PAD, right: TRACK_PAD }} aria-hidden>
+                      <div className="absolute inset-y-0 left-0 w-[3px] -translate-x-1/2 bg-white" />
+                      {goal !== null && <div className="track-finish absolute inset-y-0 w-2.5 -translate-x-1/2 shadow-[0_0_0_1px_rgba(255,255,255,0.9)]" style={{ left: `${track.goalPct}%` }} />}
+                    </div>
+                    <ul className="flex flex-col">
+                      {members.map((m) => (
+                        <Lane
+                          key={m.userId}
+                          member={m}
+                          lane={track.lanes.get(m.userId)!}
+                          goalPct={goal === null ? 100 : track.goalPct}
+                          isMe={m.userId === myId}
+                          ran={ran}
+                          backParam={backParam}
+                          onOpenProfile={() => setProfile(m)}
+                        />
+                      ))}
+                    </ul>
+                  </div>
+                </div>
               </div>
-              <ul className="flex flex-col">
-                {data.members.map((m) => (
-                  <Lane
-                    key={m.userId}
-                    member={m}
-                    lane={track.lanes.get(m.userId)!}
-                    goalPct={track.goalPct}
-                    isMe={m.userId === myId}
-                    ran={ran}
-                    backParam={backParam}
-                    onOpenProfile={() => setProfile(m)}
-                  />
-                ))}
-              </ul>
-            </div>
-          </div>
-
+            );
+          })}
         </div>
       )}
 
@@ -143,7 +167,7 @@ function Lane({ member: m, lane, goalPct, isMe, ran, backParam, onOpenProfile }:
           style={{ left: runnerLeft, top: TRAIL_Y, width: AVATAR, height: AVATAR }}
         >
           <span className={`block rounded-full ${isMe && ran ? 'track-bob' : ''}`}>
-            <Avatar src={m.avatarUrl ?? null} name={m.nickname} size={AVATAR} badge={m.runnerType} />
+            <Avatar src={m.avatarUrl ?? null} name={m.nickname} size={AVATAR} />
           </span>
           <span className="sr-only">{OUTCOME_LABEL[m.outcome]}</span>
         </button>
@@ -186,7 +210,7 @@ function Segment({ seg, index, count, nickname, ran, href }: { seg: TrackSegment
       style={{ top: TRAIL_Y, left: `${seg.startPct}%`, width: `${seg.widthPct}%`, zIndex: count - index }}
     >
       <span
-        className={`absolute inset-x-0 top-1/2 origin-left border-r-2 border-[#d5503a]/70 transition-transform duration-1000 ease-out group-hover:brightness-110 group-focus-visible:ring-2 group-focus-visible:ring-white motion-reduce:transition-none ${tone} ${index === 0 ? 'rounded-l-full' : ''} ${index === count - 1 ? 'rounded-r-full border-r-0' : ''}`}
+        className={`absolute inset-x-0 top-1/2 origin-left border-r-2 border-black/25 transition-transform duration-1000 ease-out group-hover:brightness-110 group-focus-visible:ring-2 group-focus-visible:ring-white motion-reduce:transition-none ${tone} ${index === 0 ? 'rounded-l-full' : ''} ${index === count - 1 ? 'rounded-r-full border-r-0' : ''}`}
         style={{ height: TRAIL_H, transform: `translateY(-50%) scaleX(${ran ? 1 : 0})`, transitionDelay: `${Math.min(index, 6) * 90}ms` }}
       >
         {seg.widthPct >= LABEL_MIN_PCT && (
