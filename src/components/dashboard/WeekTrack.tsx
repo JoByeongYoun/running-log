@@ -53,16 +53,7 @@ export function WeekTrack({ data, myId }: { data: WeekDashboard; myId: string })
 
   return (
     <section className="track-stadium overflow-hidden rounded-2xl p-3 text-white shadow-md ring-1 ring-green-700/40 sm:p-4" aria-labelledby="week-track-title">
-      <div className="track-text mb-3 flex items-center justify-between gap-2">
-        <h2 id="week-track-title" className="flex items-center gap-1.5 font-bold tracking-tight">
-          <span aria-hidden>🏟️</span> 주간 트랙
-        </h2>
-        <span className="flex items-center gap-1 rounded-full bg-white/25 px-2.5 py-0.5 text-xs font-semibold tabular-nums ring-1 ring-white/40">
-          <SectionIcon type="passion" size={13} /> 열정 {formatMeters(data.week.targetMeters)}km
-          <span className="opacity-70">·</span>
-          <SectionIcon type="free" size={13} /> 자유 {formatMeters(data.week.freeMinMeters)}km
-        </span>
-      </div>
+      <h2 id="week-track-title" className="track-text mb-3 font-bold tracking-tight">Weekly Track</h2>
 
       {data.members.length === 0 ? (
         <p className="track-text py-4 text-center text-sm text-white/90">이 주에는 멤버가 없습니다.</p>

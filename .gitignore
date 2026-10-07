@@ -50,3 +50,4 @@ supabase/.branches
 /playwright-report/
 scratch/
 .idea/
+.claude/settings.local.json
