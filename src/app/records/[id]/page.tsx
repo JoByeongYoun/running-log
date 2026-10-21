@@ -11,6 +11,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { STATUS_LABEL } from '@/lib/dashboard/types';
 import { PhotoGallery } from '@/components/record/PhotoGallery';
 import { CommentList } from '@/components/record/CommentList';
+import { LikeButton } from '@/components/record/LikeButton';
 import { RecordOwnerActions, AdminDeleteAction } from '@/components/record/RecordOwnerActions';
 import { ReviewHistory } from '@/components/record/ReviewHistory';
 import { ReviewActions } from '@/components/admin/ReviewActions';
@@ -22,7 +23,7 @@ export default async function RecordPage({ params, searchParams }: PageProps<'/r
   if (!session) redirect('/login');
   const supabase = session.supabase;
   // 서로 독립인 조회는 한 번에 보내 왕복 횟수를 줄인다 (그룹 상태 · 기록 · 댓글).
-  const [state, { data: rec }, { data: comments }] = await Promise.all([
+  const [state, { data: rec }, { data: comments }, { data: likes }] = await Promise.all([
     getGroupState(supabase),
     supabase
       .from('running_records')
@@ -32,13 +33,16 @@ export default async function RecordPage({ params, searchParams }: PageProps<'/r
     supabase
       .from('comments').select('id, user_id, body, created_at, deleted_at, profiles!comments_user_id_fkey(nickname, avatar_path)')
       .eq('record_id', id).is('deleted_at', null).order('created_at'),
+    supabase
+      .from('record_likes').select('user_id, created_at, profiles!record_likes_user_id_fkey(nickname, avatar_path)')
+      .eq('record_id', id).order('created_at', { ascending: false }),
   ]);
   if (!state.membership) redirect('/');
   if (!rec) notFound();
 
   const back = typeof sp.week === 'string' && isValidYmd(sp.week) && sp.from === 'home' ? `/?week=${mondayOf(sp.week)}` : '/';
   const photos = [...rec.record_photos].sort((a, b) => a.order_index - b.order_index);
-  const avatarPaths = [rec.profiles?.avatar_path, ...(comments ?? []).map((c) => c.profiles?.avatar_path)].filter((p): p is string => Boolean(p));
+  const avatarPaths = [rec.profiles?.avatar_path, ...[...(comments ?? []), ...(likes ?? [])].map((c) => c.profiles?.avatar_path)].filter((p): p is string => Boolean(p));
   const [photoUrls, avatarUrls] = await Promise.all([
     signedUrls('evidence', photos.map((p) => p.storage_path)),
     signedUrls('avatars', avatarPaths),
@@ -99,6 +103,16 @@ export default async function RecordPage({ params, searchParams }: PageProps<'/r
           <ReviewActions recordId={rec.id} status={rec.status} version={rec.version} />
         )}
 
+        <LikeButton
+          recordId={rec.id}
+          myId={session.user.id}
+          initialLiked={(likes ?? []).some((l) => l.user_id === session.user.id)}
+          likers={(likes ?? []).map((l) => ({
+            userId: l.user_id,
+            nickname: l.profiles?.nickname ?? '(이름 없음)',
+            avatarUrl: l.profiles?.avatar_path ? avatarUrls.get(l.profiles.avatar_path) ?? null : null,
+          }))}
+        />
         <CommentList
           recordId={rec.id}
           myId={session.user.id}

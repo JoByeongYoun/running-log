@@ -99,3 +99,31 @@ input, textarea, select, button { font: inherit; }
 @media (prefers-reduced-motion: reduce) {
   .track-bob { animation: none; }
 }
+
+/* 좋아요 하트: 누르면 통통 튀고, 링이 퍼지고, 작은 점들이 터진다 */
+@keyframes like-pop {
+  0% { transform: scale(1); }
+  25% { transform: scale(0.7); }
+  55% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+@keyframes like-ring {
+  0% { transform: scale(0.4); opacity: 0.9; border-width: 6px; }
+  100% { transform: scale(1.9); opacity: 0; border-width: 0; }
+}
+@keyframes like-spark {
+  0% { transform: rotate(var(--a)) translateY(0) scale(1); opacity: 1; }
+  100% { transform: rotate(var(--a)) translateY(-22px) scale(0.2); opacity: 0; }
+}
+@keyframes like-count {
+  0% { transform: translateY(6px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+.like-pop { animation: like-pop 0.45s cubic-bezier(0.17, 0.89, 0.32, 1.28); }
+.like-ring { animation: like-ring 0.5s ease-out forwards; }
+.like-spark { animation: like-spark 0.55s ease-out forwards; }
+.like-count { animation: like-count 0.25s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .like-pop, .like-count { animation: none; }
+  .like-ring, .like-spark { display: none; }
+}
