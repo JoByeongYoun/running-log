@@ -86,6 +86,7 @@ export function RecordForm({ today, notice, disabledReason }: { today: string; n
       <Input label="거리 (km)" value={distance} onChange={(e) => setDistance(e.target.value)} inputMode="decimal" placeholder="예: 5.25" required hint="0.01 ~ 500km, 소수 둘째 자리까지" />
       <PhotoPicker photos={photos} onAdd={add} onRemove={remove} onMove={move} onRetry={retry} disabled={pending} />
       <Textarea label="메모 (선택)" value={memo} onChange={(e) => setMemo(e.target.value)} maxLength={1000} rows={2} />
+      {photos.length === 0 && <p className="text-sm text-amber-700" role="status">사진을 1장 이상 첨부해야 제출할 수 있습니다.</p>}
       <FormMessage error={error} />
       <Button type="submit" full loading={pending} disabled={!allReady || !distance}>{activityDate === today ? '오늘 기록 제출' : '기록 제출'}</Button>
     </form>

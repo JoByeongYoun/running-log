@@ -46,6 +46,7 @@ export function RecordOwnerActions({ record, photos: existing }: Props) {
           <PhotoPicker photos={photos} onAdd={add} onRemove={remove} onMove={move} onRetry={retry} disabled={pending} />
           <Textarea label="메모 (선택)" value={memo} onChange={(e) => setMemo(e.target.value)} maxLength={1000} rows={2} />
           <p className="text-xs text-slate-500">수정하면 관리자가 내용을 다시 확인합니다.</p>
+          {photos.length === 0 && <p className="text-sm text-amber-700" role="status">사진을 1장 이상 첨부해야 저장할 수 있습니다.</p>}
           <FormMessage error={error} />
           <div className="flex gap-2">
             <Button type="button" variant="secondary" full onClick={() => setEdit(false)}>취소</Button>
