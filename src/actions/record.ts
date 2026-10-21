@@ -85,6 +85,19 @@ export async function updateRecord(input: UpdateInput): Promise<{ error?: string
   return {};
 }
 
+const coverSchema = z.object({ recordId: uuidSchema, orderIndex: z.number().int().min(0).nullable() });
+
+/** 대표 사진(셀카) 지정. 증거 내용은 바뀌지 않으므로 재검토 없이 소유자가 언제든 바꿀 수 있다. orderIndex null 이면 해제. */
+export async function setRecordCover(input: z.input<typeof coverSchema>): Promise<{ error?: string }> {
+  const parsed = coverSchema.safeParse(input);
+  if (!parsed.success) return { error: firstIssue(parsed.error) };
+  const supabase = await createServerSupabase();
+  const { error } = await supabase.rpc('set_record_cover', { p_record_id: parsed.data.recordId, p_order_index: parsed.data.orderIndex ?? undefined });
+  if (error) return { error: messageForError(error) };
+  revalidatePath(`/records/${parsed.data.recordId}`);
+  return {};
+}
+
 export async function deleteRecord(recordId: string): Promise<{ error?: string }> {
   if (!uuidSchema.safeParse(recordId).success) return { error: '잘못된 요청입니다.' };
   const supabase = await createServerSupabase();

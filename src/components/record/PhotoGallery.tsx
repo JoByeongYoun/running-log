@@ -1,16 +1,17 @@
 'use client';
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { removePhoto } from '@/actions/record';
+import { removePhoto, setRecordCover } from '@/actions/record';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
 import { PhotoLightbox } from './PhotoLightbox';
 
-type Photo = { id: string; url: string };
+type Photo = { id: string; url: string; isCover?: boolean };
 type Editable = { id: string; distance: string; memo: string; version: number };
 
-export function PhotoGallery({ photos, editable }: { photos: Photo[]; editable?: Editable }) {
+/** coverEditable: 기록 소유자. 대표 사진은 재검토 없이 언제든 바꿀 수 있다. */
+export function PhotoGallery({ photos, editable, coverEditable }: { photos: Photo[]; editable?: Editable; coverEditable?: { id: string } }) {
   const [idx, setIdx] = useState<number | null>(null);
   const [target, setTarget] = useState<Photo | null>(null);
   const [pending, start] = useTransition();
@@ -25,6 +26,7 @@ export function PhotoGallery({ photos, editable }: { photos: Photo[]; editable?:
         <h2 className="text-sm font-semibold">증거 사진 {photos.length}장</h2>
         {editable && photos.length === 1 && <span className="text-xs text-slate-400">사진은 최소 1장 필요</span>}
       </div>
+      {coverEditable && photos.length > 1 && <p className="mb-2 text-xs text-slate-500">⭐ 대표 사진이 주간 요약 콜라주에 실립니다. 별을 눌러 바꿀 수 있어요.</p>}
       <ul className="grid grid-cols-3 gap-2">
         {photos.map((p, i) => (
           <li key={p.id} className="relative">
@@ -32,6 +34,20 @@ export function PhotoGallery({ photos, editable }: { photos: Photo[]; editable?:
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={p.url} alt={`증거 사진 ${i + 1}`} className="aspect-square w-full object-cover" loading="lazy" />
             </button>
+            {(p.isCover || coverEditable) && (
+              <button
+                type="button" disabled={!coverEditable || pending} aria-pressed={Boolean(p.isCover)}
+                aria-label={p.isCover ? `사진 ${i + 1} 대표 사진` : `사진 ${i + 1}을 대표 사진으로`}
+                onClick={() => coverEditable && start(async () => {
+                  const res = await setRecordCover({ recordId: coverEditable.id, orderIndex: p.isCover ? null : i });
+                  if (res.error) { toast(res.error, 'error'); return; }
+                  router.refresh();
+                })}
+                className={`absolute left-1 top-1 rounded-full px-1.5 py-0.5 text-xs ${p.isCover ? 'bg-amber-400 text-amber-950' : 'bg-black/60 text-white/70'}`}
+              >
+                {p.isCover ? '⭐ 대표' : '☆'}
+              </button>
+            )}
             {canDelete && (
               <button
                 type="button" onClick={() => setTarget(p)} aria-label={`사진 ${i + 1} 삭제`}

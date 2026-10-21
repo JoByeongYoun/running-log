@@ -1,7 +1,7 @@
 'use client';
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { deleteRecord, updateRecord } from '@/actions/record';
+import { deleteRecord, updateRecord, setRecordCover } from '@/actions/record';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { Input, Textarea } from '@/components/ui/Input';
@@ -12,7 +12,7 @@ import { usePhotoUploads } from './usePhotoUploads';
 
 type Props = {
   record: { id: string; distance: string; memo: string; version: number; status: 'pending' | 'rejected' | 'approved' | 'expired' };
-  photos: { id: string; url: string }[];
+  photos: { id: string; url: string; isCover?: boolean }[];
 };
 
 export function RecordOwnerActions({ record, photos: existing }: Props) {
@@ -22,7 +22,10 @@ export function RecordOwnerActions({ record, photos: existing }: Props) {
   const [memo, setMemo] = useState(record.memo);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
-  const { photos, add, remove, move, retry, allReady } = usePhotoUploads(existing.map((p) => ({ localId: p.id, previewUrl: p.url, status: 'existing', photoId: p.id })));
+  const { photos, add, remove, move, retry, allReady, coverId, pickCover, coverOrderIndex } = usePhotoUploads(
+    existing.map((p) => ({ localId: p.id, previewUrl: p.url, status: 'existing', photoId: p.id })),
+    existing.find((p) => p.isCover)?.id ?? null,
+  );
   const router = useRouter();
   const toast = useToast();
 
@@ -39,11 +42,12 @@ export function RecordOwnerActions({ record, photos: existing }: Props) {
             uploadIds: photos.filter((p) => p.status === 'ready' && p.uploadId).map((p) => p.uploadId!),
           });
           if (res.error) { setError(res.error); return; }
+          await setRecordCover({ recordId: record.id, orderIndex: coverOrderIndex });
           toast(record.status === 'rejected' ? '재제출했습니다. 관리자가 다시 검토합니다.' : '수정했습니다. 다시 승인 대기 상태가 됩니다.');
           setEdit(false); router.refresh();
         }); }}>
           <Input label="거리 (km)" value={distance} onChange={(e) => setDistance(e.target.value)} inputMode="decimal" required hint="0.01 ~ 500km, 소수 둘째 자리까지" />
-          <PhotoPicker photos={photos} onAdd={add} onRemove={remove} onMove={move} onRetry={retry} disabled={pending} />
+          <PhotoPicker photos={photos} onAdd={add} onRemove={remove} onMove={move} onRetry={retry} coverId={coverId} onCover={pickCover} disabled={pending} />
           <Textarea label="메모 (선택)" value={memo} onChange={(e) => setMemo(e.target.value)} maxLength={1000} rows={2} />
           <p className="text-xs text-slate-500">수정하면 관리자가 내용을 다시 확인합니다.</p>
           <FormMessage error={error} />

@@ -26,7 +26,7 @@ export default async function RecordPage({ params, searchParams }: PageProps<'/r
     getGroupState(supabase),
     supabase
       .from('running_records')
-      .select('id, user_id, activity_date, distance_meters, memo, status, version, created_at, updated_at, photos_purged_at, group_weeks(week_start, state), profiles!running_records_user_id_fkey(nickname, avatar_path), record_photos(id, storage_path, order_index), record_reviews(id, to_status, reason, created_at, actor_id)')
+      .select('id, user_id, activity_date, distance_meters, memo, status, version, created_at, updated_at, photos_purged_at, group_weeks(week_start, state), profiles!running_records_user_id_fkey(nickname, avatar_path), record_photos(id, storage_path, order_index, is_cover), record_reviews(id, to_status, reason, created_at, actor_id)')
       .eq('id', id)
       .maybeSingle(),
     supabase
@@ -50,7 +50,7 @@ export default async function RecordPage({ params, searchParams }: PageProps<'/r
   const windowOpen = Boolean(rec.group_weeks) && isEditWindowOpen(rec.group_weeks!.week_start, rec.group_weeks!.state);
   const canEdit = isOwner && (rec.status === 'pending' || rec.status === 'rejected') && windowOpen;
   const weekFinal = rec.group_weeks?.state === 'finalized';
-  const photoItems = photos.map((p) => ({ id: p.id, url: photoUrls.get(p.storage_path) ?? '' }));
+  const photoItems = photos.map((p) => ({ id: p.id, url: photoUrls.get(p.storage_path) ?? '', isCover: p.is_cover }));
   const editable = { id: rec.id, distance: formatMeters(rec.distance_meters), memo: rec.memo ?? '', version: rec.version, status: rec.status };
 
   const statusTone = { pending: 'bg-amber-100 text-amber-800', approved: 'bg-emerald-100 text-emerald-800', rejected: 'bg-red-100 text-red-700', expired: 'bg-slate-200 text-slate-600' }[rec.status];
@@ -86,7 +86,7 @@ export default async function RecordPage({ params, searchParams }: PageProps<'/r
           <ReviewHistory reviews={reviews.map((r) => ({ id: r.id, toStatus: r.to_status, reason: r.reason, createdAt: r.created_at, byOwner: r.actor_id === rec.user_id }))} />
         </section>
 
-        <PhotoGallery photos={photoItems} editable={canEdit ? editable : undefined} />
+        <PhotoGallery photos={photoItems} editable={canEdit ? editable : undefined} coverEditable={isOwner && !rec.photos_purged_at ? { id: rec.id } : undefined} />
         {rec.photos_purged_at && photoItems.length === 0 && (
           <p className="rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-500">
             증거 사진은 주간 마감 후 {PHOTO_RETENTION_WEEKS}주까지만 보관되어 삭제되었습니다. 기록과 검토 결과는 그대로 유지됩니다.

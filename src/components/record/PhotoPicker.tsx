@@ -12,6 +12,8 @@ export type PhotoItem = {
   photoId?: string; // existing photo (edit mode)
   error?: string;
   file?: File;
+  /** 화면 해상도와 같은 크기라 거리 인증 스크린샷으로 추정됨 (대표 사진 기본값에서 제외) */
+  likelyScreenshot?: boolean;
 };
 
 type Props = {
@@ -20,10 +22,13 @@ type Props = {
   onRemove: (localId: string) => void;
   onMove: (localId: string, dir: -1 | 1) => void;
   onRetry: (localId: string) => void;
+  /** 대표 사진(셀카) localId */
+  coverId?: string | null;
+  onCover?: (localId: string) => void;
   disabled?: boolean;
 };
 
-export function PhotoPicker({ photos, onAdd, onRemove, onMove, onRetry, disabled }: Props) {
+export function PhotoPicker({ photos, onAdd, onRemove, onMove, onRetry, coverId, onCover, disabled }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [viewIdx, setViewIdx] = useState<number | null>(null);
   const remaining = MAX_PHOTOS - photos.length;
@@ -36,6 +41,7 @@ export function PhotoPicker({ photos, onAdd, onRemove, onMove, onRetry, disabled
         <Button type="button" variant="secondary" disabled={disabled || remaining <= 0} onClick={() => inputRef.current?.click()}>사진 추가</Button>
       </div>
       <p className="text-xs text-slate-500">1~5장, 장당 10MB 이하. 기록 숫자가 보이게 촬영하세요. 위치 정보는 자동으로 제거됩니다.</p>
+      {onCover && photos.length > 1 && <p className="text-xs text-slate-500">⭐ 대표 사진은 주간 요약 콜라주에 실립니다. 셀카를 골라 주세요.</p>}
       {photos.length > 0 && (
         <ul className="grid grid-cols-3 gap-2">
           {photos.map((p, i) => (
@@ -45,7 +51,15 @@ export function PhotoPicker({ photos, onAdd, onRemove, onMove, onRetry, disabled
                 <img src={p.previewUrl} alt={`사진 ${i + 1}`} className="aspect-square w-full object-cover" />
               </button>
               <div className="absolute inset-x-0 top-0 flex justify-between p-1">
-                <span className="rounded-full bg-black/60 px-1.5 text-xs text-white">{i + 1}</span>
+                <span className="flex items-center gap-1">
+                  <span className="rounded-full bg-black/60 px-1.5 text-xs text-white">{i + 1}</span>
+                  {onCover && (
+                    <button type="button" aria-label={p.localId === coverId ? `사진 ${i + 1} 대표 사진` : `사진 ${i + 1}을 대표 사진으로`} aria-pressed={p.localId === coverId} disabled={disabled}
+                      onClick={() => onCover(p.localId)} className={`rounded-full px-1.5 text-xs ${p.localId === coverId ? 'bg-amber-400 text-amber-950' : 'bg-black/60 text-white/70'}`}>
+                      {p.localId === coverId ? '⭐ 대표' : '☆'}
+                    </button>
+                  )}
+                </span>
                 <button type="button" aria-label="사진 삭제" disabled={disabled} onClick={() => onRemove(p.localId)} className="min-h-7 min-w-7 rounded-full bg-black/60 text-white">×</button>
               </div>
               <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-black/50 px-1 py-0.5 text-xs text-white">

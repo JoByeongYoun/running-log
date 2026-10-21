@@ -1,6 +1,7 @@
 /** 콜라주에 넣을 최대 사진 수. 카드 한 장에 들어갈 만큼만. */
 export const SUMMARY_PHOTO_LIMIT = 9;
 
+/** paths[0] 이 대표 사진. 호출 측이 is_cover 우선으로 정렬해 넘긴다. */
 export type PhotoSource = { recordId: string; userId: string; nickname: string; paths: string[] };
 export type PickedPhoto = { recordId: string; userId: string; nickname: string; path: string };
 

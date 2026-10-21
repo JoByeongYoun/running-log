@@ -1,7 +1,7 @@
 'use client';
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { submitRecord } from '@/actions/record';
+import { submitRecord, setRecordCover } from '@/actions/record';
 import { Input, Textarea } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { FormMessage } from '@/components/ui/FormMessage';
@@ -33,7 +33,7 @@ export function RecordForm({ today, notice, disabledReason }: { today: string; n
   const [activityDate, setActivityDate] = useState(today);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
-  const { photos, setPhotos, add, remove, move, retry, allReady } = usePhotoUploads();
+  const { photos, add, remove, move, retry, allReady, coverId, pickCover, coverOrderIndex, reset } = usePhotoUploads();
   const router = useRouter();
   const toast = useToast();
   const dates = selectableDates(today);
@@ -56,9 +56,11 @@ export function RecordForm({ today, notice, disabledReason }: { today: string; n
         setError(res.error);
         return;
       }
+      // 대표 사진은 부가 정보라 실패해도 제출은 성공으로 둔다
+      if (res.id && coverOrderIndex !== null) void setRecordCover({ recordId: res.id, orderIndex: coverOrderIndex });
       toast('기록을 등록했습니다. 관리자 승인을 기다려 주세요.');
       setSubmissionKey(crypto.randomUUID());
-      setDistance(''); setMemo(''); setPhotos([]); setActivityDate(today);
+      setDistance(''); setMemo(''); reset(); setActivityDate(today);
       router.push('/');
     });
   }
@@ -84,7 +86,7 @@ export function RecordForm({ today, notice, disabledReason }: { today: string; n
         <p className="text-xs text-slate-500">{includesLastWeek ? '지난주 기록은 오늘(월요일)까지 올릴 수 있습니다.' : '이번 주 월요일부터 오늘까지 선택할 수 있습니다.'}</p>
       </div>
       <Input label="거리 (km)" value={distance} onChange={(e) => setDistance(e.target.value)} inputMode="decimal" placeholder="예: 5.25" required hint="0.01 ~ 500km, 소수 둘째 자리까지" />
-      <PhotoPicker photos={photos} onAdd={add} onRemove={remove} onMove={move} onRetry={retry} disabled={pending} />
+      <PhotoPicker photos={photos} onAdd={add} onRemove={remove} onMove={move} onRetry={retry} coverId={coverId} onCover={pickCover} disabled={pending} />
       <Textarea label="메모 (선택)" value={memo} onChange={(e) => setMemo(e.target.value)} maxLength={1000} rows={2} />
       <FormMessage error={error} />
       <Button type="submit" full loading={pending} disabled={!allReady || !distance}>{activityDate === today ? '오늘 기록 제출' : '기록 제출'}</Button>

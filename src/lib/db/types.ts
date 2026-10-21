@@ -512,18 +512,21 @@ export type Database = {
       record_photos: {
         Row: {
           id: string
+          is_cover: boolean
           order_index: number
           record_id: string
           storage_path: string
         }
         Insert: {
           id?: string
+          is_cover?: boolean
           order_index: number
           record_id: string
           storage_path: string
         }
         Update: {
           id?: string
+          is_cover?: boolean
           order_index?: number
           record_id?: string
           storage_path?: string
@@ -903,6 +906,10 @@ export type Database = {
           p_type: Database["public"]["Enums"]["runner_type"]
           p_user_id: string
         }
+        Returns: undefined
+      }
+      set_record_cover: {
+        Args: { p_order_index?: number; p_record_id: string }
         Returns: undefined
       }
       submit_record: {
