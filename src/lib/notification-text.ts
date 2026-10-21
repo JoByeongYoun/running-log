@@ -19,6 +19,10 @@ export function notificationText(n: NotificationView): string {
       const s = m.status === 'approved' ? '승인되었습니다' : m.status === 'rejected' ? `반려되었습니다${m.reason ? ` (${m.reason})` : ''}` : m.status === 'pending' ? `승인이 취소되었습니다${m.reason ? ` (${m.reason})` : ''}` : '처리되었습니다';
       return `${m.meters ? formatMeters(Number(m.meters)) + 'km ' : ''}기록이 ${s}.`;
     }
+    case 'record_like': return `${m.nickname ?? '회원'}님이 내 ${m.meters ? formatMeters(Number(m.meters)) + 'km ' : ''}기록을 좋아합니다 ❤️`;
+    case 'record_comment': return m.deleted
+      ? `${m.nickname ?? '회원'}님이 내 기록에 댓글을 남겼습니다 (삭제됨).`
+      : `${m.nickname ?? '회원'}님이 내 기록에 댓글을 남겼습니다${m.body ? `: "${m.body}"` : '.'}`;
     case 'record_expired': return `${m.date ?? ''} ${m.meters ? formatMeters(Number(m.meters)) + 'km ' : ''}기록이 검토 기한 만료로 합계에서 제외되었습니다.`;
     case 'review_reminder': return m.phase === '11' ? '지난주 기록 검토 마감이 1시간 남았습니다 (12:00).' : '지난주 검토가 남아 있습니다. 화요일 12:00까지 처리하세요.';
     case 'week_final': return `${m.weekStart ? formatWeekRange(String(m.weekStart)) + ' ' : ''}주간 결과가 확정되었습니다.`;

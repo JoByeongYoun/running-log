@@ -118,6 +118,32 @@ describe('records: upload, submit, edit, review, comments', () => {
     expect((await admin.from('running_records').select('id').eq('id', rec)).data).toHaveLength(0);
   });
 
+  it('likes toggle and notify the owner once; comments notify the owner', async () => {
+    const rec = (await submit(m1, 3000, await uploadEvidence(m1, 1))).data as string;
+    const notes = async () => (await m1.client.rpc('get_notifications', { p_limit: 50 })).data as { type: string; link: string; meta: Record<string, unknown> }[];
+    const likeNotes = async () => (await notes()).filter((n) => n.type === 'record_like');
+    const before = (await likeNotes()).length;
+
+    expect((await m2.client.rpc('toggle_like', { p_record_id: rec })).data).toEqual({ liked: true, count: 1 });
+    expect((await m2.client.rpc('toggle_like', { p_record_id: rec })).data).toEqual({ liked: false, count: 0 });
+    expect((await m2.client.rpc('toggle_like', { p_record_id: rec })).data).toEqual({ liked: true, count: 1 });
+    const likes = await likeNotes();
+    expect(likes).toHaveLength(before + 1);
+    expect(likes[0]).toMatchObject({ link: `/records/${rec}`, meta: { nickname: 'm2', meters: 3000 } });
+
+    // 본인 좋아요·댓글은 알림 없음
+    expect((await m1.client.rpc('toggle_like', { p_record_id: rec })).data).toEqual({ liked: true, count: 2 });
+    expect(await likeNotes()).toHaveLength(before + 1);
+    await m1.client.rpc('add_comment', { p_record_id: rec, p_body: '내 댓글' });
+    await m2.client.rpc('add_comment', { p_record_id: rec, p_body: '멋져요' });
+    const comments = (await notes()).filter((n) => n.type === 'record_comment');
+    expect(comments).toHaveLength(1);
+    expect(comments[0]).toMatchObject({ link: `/records/${rec}`, meta: { nickname: 'm2', body: '멋져요', deleted: false } });
+
+    expect((await m2.client.from('record_likes').select('user_id').eq('record_id', rec)).data).toHaveLength(2);
+    expectRpcError(await m1.client.rpc('toggle_like', { p_record_id: crypto.randomUUID() }), 'not_found');
+  });
+
   it('comments: add, order, delete permissions, hidden after leaving', async () => {
     const rec = (await submit(m1, 1000, await uploadEvidence(m1, 1))).data as string;
     const c1 = (await m2.client.rpc('add_comment', { p_record_id: rec, p_body: '첫 댓글' })).data as string;

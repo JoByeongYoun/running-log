@@ -509,6 +509,39 @@ export type Database = {
           },
         ]
       }
+      record_likes: {
+        Row: {
+          created_at: string
+          record_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          record_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          record_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "record_likes_record_id_fkey"
+            columns: ["record_id"]
+            isOneToOne: false
+            referencedRelation: "running_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "record_likes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       record_photos: {
         Row: {
           id: string
@@ -936,6 +969,7 @@ export type Database = {
         Args: { p_secret: string; p_url: string }
         Returns: undefined
       }
+      toggle_like: { Args: { p_record_id: string }; Returns: Json }
       transfer_admin: {
         Args: { p_group_id: string; p_to_user_id: string }
         Returns: undefined
