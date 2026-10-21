@@ -45,12 +45,17 @@ export type WeekDashboard = {
   today: string;
 };
 
+/** 주간 요약 콜라주용 사진 (기록당 대표 1장, 서명 URL 포함) */
+export type SummaryPhoto = { recordId: string; userId: string; nickname: string; path: string; url: string };
+
 export type WeekSummary = WeekDashboard & {
   successCount: number;
   evaluatedCount: number;
   groupTotalMeters: number;
   penaltyTotalWon: number;
   myUserId: string;
+  /** 서버 액션에서 채움. RPC 원본에는 없다. */
+  photos?: SummaryPhoto[];
 };
 
 export const OUTCOME_LABEL: Record<Outcome, string> = {
