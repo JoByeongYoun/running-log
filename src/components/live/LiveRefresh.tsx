@@ -4,8 +4,10 @@ import { useRouter } from 'next/navigation';
 import { createBrowserSupabase } from '@/lib/supabase/client';
 
 const TABLES = ['running_records', 'record_reviews', 'comments', 'notifications', 'join_requests', 'memberships', 'group_weeks'] as const;
-const DEBOUNCE_MS = 400;
-const FOCUS_MIN_GAP_MS = 5_000;
+// 한 동작이 여러 테이블에 행을 남기므로(기록+알림, 검토+기록+알림) 넉넉히 묶어서 서버 렌더 1회로 만든다.
+const DEBOUNCE_MS = 1_500;
+// Realtime 이 변경을 전달하므로 탭 복귀 갱신은 오래 떠나 있었을 때만 한다.
+const FOCUS_MIN_GAP_MS = 60_000;
 
 /** DB 변경(Realtime) 또는 탭 복귀 시 서버 컴포넌트를 다시 렌더링한다. 로그인 상태에서만 구독한다. */
 export function LiveRefresh() {

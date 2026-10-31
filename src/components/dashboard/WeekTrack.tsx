@@ -195,6 +195,7 @@ function Segment({ seg, index, count, nickname, ran, href }: { seg: TrackSegment
   return (
     <Link
       href={href}
+      prefetch={false}
       title={label}
       aria-label={label}
       className="group absolute h-10 min-w-[10px] -translate-y-1/2 outline-none"

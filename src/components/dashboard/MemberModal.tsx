@@ -154,7 +154,7 @@ export function MemberModal({ member, data, isMe, onClose }: Props) {
                 <ul className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200">
                   {records.map((r) => (
                     <li key={r.id}>
-                      <Link href={`/records/${r.id}${backParam}`} onClick={onClose} className="flex min-h-12 items-center gap-3 px-3 py-2 hover:bg-slate-50">
+                      <Link href={`/records/${r.id}${backParam}`} prefetch={false} onClick={onClose} className="flex min-h-12 items-center gap-3 px-3 py-2 hover:bg-slate-50">
                         <span className="w-14 shrink-0 text-xs text-slate-500">{r.date.slice(5).replace('-', '/')} <span className="text-slate-400">{DOW[m.days.findIndex((d) => d.date === r.date)]}</span></span>
                         <span className="flex-1 text-sm font-semibold text-slate-900">{formatMeters(r.meters)} km</span>
                         <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${r.status === 'approved' ? 'bg-emerald-50 text-emerald-700' : r.status === 'pending' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>{STATUS_LABEL[r.status]}</span>

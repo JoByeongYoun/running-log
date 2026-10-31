@@ -1,5 +1,6 @@
 'use server';
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { createServerSupabase } from '@/lib/supabase/server';
@@ -7,6 +8,7 @@ import { createAdminSupabase } from '@/lib/supabase/admin';
 import { nicknameSchema, firstIssue } from '@/lib/domain/validation';
 import { MAX_FILE_BYTES } from '@/lib/domain/constants';
 import { safeReturnTo } from '@/lib/auth/return-to';
+import { ONBOARDED_COOKIE, ONBOARDED_COOKIE_OPTIONS } from '@/lib/auth/onboarded-cookie';
 import type { ActionState } from './auth';
 
 async function verifyOwnedObject(bucket: 'avatars', path: string, userId: string): Promise<string | null> {
@@ -38,6 +40,7 @@ export async function completeOnboarding(_prev: ActionState, formData: FormData)
     onboarding_completed_at: new Date().toISOString(),
   }).eq('id', user.id);
   if (error) return { error: '프로필 저장에 실패했습니다.' };
+  (await cookies()).set(ONBOARDED_COOKIE, user.id, ONBOARDED_COOKIE_OPTIONS);
   redirect(safeReturnTo(parsed.data.returnTo));
 }
 

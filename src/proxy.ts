@@ -38,5 +38,6 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|icons/|.*\\.(?:png|jpg|jpeg|svg|webp|ico|json|txt)$).*)'],
+  // api/* 는 각 라우트가 자체 인증하고, sw.js·manifest 는 공개 정적 응답이므로 proxy(JWT 검증·DB 조회)를 거치지 않는다.
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|icons/|api/|sw\\.js|manifest\\.webmanifest|.*\\.(?:png|jpg|jpeg|svg|webp|ico|json|txt)$).*)'],
 };
